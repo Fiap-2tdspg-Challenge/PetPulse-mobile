@@ -5,11 +5,15 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { cores } from '../../theme/cores';
+
+type RootStack = { Home: undefined; Login: undefined };
 
 const acoesRapidas = [
   { id: '1', label: 'Vacinas',    icone: 'medical'                    as const },
@@ -19,6 +23,8 @@ const acoesRapidas = [
 ];
 
 export const Home = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStack>>();
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={cores.branco} />
@@ -29,10 +35,15 @@ export const Home = () => {
       >
         {/* HEADER */}
         <View style={styles.header}>
-          <Text style={styles.saudacao}>Olá, User! 👋</Text>
-          <TouchableOpacity>
-            <Ionicons name="notifications-outline" size={26} color={cores.cinzaEscuro} />
-          </TouchableOpacity>
+          <Text style={styles.saudacao}>Olá, User! </Text>
+          <View style={styles.headerAcoes}>
+            <TouchableOpacity>
+              <Ionicons name="notifications-outline" size={26} color={cores.cinzaEscuro} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.replace('Login')} style={styles.logoutBtn}>
+              <Ionicons name="log-out-outline" size={24} color={cores.roxoMedio} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* SEU PET */}
@@ -109,6 +120,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 8,
+  },
+  headerAcoes: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  logoutBtn: {
+    padding: 2,
   },
   saudacao: {
     fontSize: 24,
