@@ -8,11 +8,14 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { cores } from '../../theme/cores';
+import { PawBackground } from '../../components/PawBackground';
+
 
 export const Login = () => {
   const navigation = useNavigation();
@@ -20,6 +23,7 @@ export const Login = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <PawBackground />
       <StatusBar barStyle="light-content" backgroundColor={cores.roxoMedio} />
       <KeyboardAvoidingView
         style={styles.container}
@@ -28,6 +32,7 @@ export const Login = () => {
     
         {/* ── FORMULÁRIO ── */}
         <View style={styles.form}>
+          <Image source={require('../../img/logo.png')} style={styles.logo} resizeMode="contain" />
           <Text style={styles.titulo}>Entre na sua conta</Text>
 
           {/* Email */}
@@ -92,6 +97,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
 
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 16,
+  },
   logoTexto: {
     fontSize: 22,
     fontWeight: '800',

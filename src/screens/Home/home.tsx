@@ -9,11 +9,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { cores } from '../../theme/cores';
 
-type RootStack = { Home: undefined; Login: undefined };
 
 const acoesRapidas = [
   { id: '1', label: 'Vacinas',    icone: 'medical'                    as const },
@@ -23,7 +21,7 @@ const acoesRapidas = [
 ];
 
 export const Home = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStack>>();
+  const navigation = useNavigation();
 
   return (
     <SafeAreaView style={styles.safeArea}>
