@@ -10,16 +10,81 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
+import { saveUsuario, getUsuarioPorEmail } from "../../services/storage";
 
 export const Cadastro = () => {
   const navigation = useNavigation();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+
+  const [form, setForm] = useState({
+    nome: '',
+    cpf: '',
+    email: '',
+    telefone: '',
+    senha: '',
+    endereco: '',
+  });
+
+  const [erros, setErros] = useState<Partial<typeof form>>({});
+
+  const atualizar = (campo: keyof typeof form, valor: string) => {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    setErros((prev) => ({ ...prev, [campo]: '' }));
+  };
+
+  const validar = (): boolean => {
+    const novosErros: Partial<typeof form> = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const cpfNumeros = form.cpf.replace(/\D/g, '');
+    const telNumeros = form.telefone.replace(/\D/g, '');
+
+    if (form.nome.trim().length < 3)
+      novosErros.nome = 'Nome deve ter pelo menos 3 caracteres.';
+    if (cpfNumeros.length !== 11)
+      novosErros.cpf = 'CPF deve conter 11 dígitos.';
+    if (!emailRegex.test(form.email))
+      novosErros.email = 'E-mail inválido.';
+    if (telNumeros.length < 10)
+      novosErros.telefone = 'Telefone deve ter pelo menos 10 dígitos.';
+    if (form.senha.length < 6)
+      novosErros.senha = 'Senha deve ter no mínimo 6 caracteres.';
+    if (form.endereco.trim().length < 5)
+      novosErros.endereco = 'Endereço inválido.';
+
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
+  };
+
+  const handleCadastrar = async () => {
+    if (!validar()) return;
+
+    const { nome, cpf, email, telefone, senha, endereco } = form;
+    setCarregando(true);
+    try {
+      const emailExistente = await getUsuarioPorEmail(email);
+      if (emailExistente) {
+        setErros((prev) => ({ ...prev, email: 'Já existe uma conta com esse e-mail.' }));
+        return;
+      }
+
+      await saveUsuario({ nome, cpf, email, telefone, senha, endereco });
+      Alert.alert('Sucesso', 'Conta criada com sucesso!', [
+        { text: 'OK', onPress: () => navigation.navigate('Login' as never) },
+      ]);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível criar a conta. Tente novamente.');
+    } finally {
+      setCarregando(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -29,7 +94,7 @@ export const Cadastro = () => {
       {/* ── HEADER ── */}
       <TouchableOpacity style={styles.header} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={22} color={cores.branco} />
-        <Text style={styles.headerTexto}>Criar conta</Text>
+        <Text style={styles.headerTexto}>Voltar</Text>
       </TouchableOpacity>
 
       <KeyboardAvoidingView
@@ -53,8 +118,11 @@ export const Cadastro = () => {
                 placeholder="Insira seu nome"
                 placeholderTextColor="rgba(255,255,255,0.6)"
                 autoCapitalize="words"
+                value={form.nome}
+                onChangeText={(v) => atualizar('nome', v)}
               />
             </View>
+            {erros.nome ? <Text style={styles.erro}>{erros.nome}</Text> : null}
 
             {/* CPF */}
             <View style={styles.inputWrap}>
@@ -65,8 +133,11 @@ export const Cadastro = () => {
                 placeholderTextColor="rgba(255,255,255,0.6)"
                 keyboardType="numeric"
                 maxLength={14}
+                value={form.cpf}
+                onChangeText={(v) => atualizar('cpf', v)}
               />
             </View>
+            {erros.cpf ? <Text style={styles.erro}>{erros.cpf}</Text> : null}
 
             {/* Email */}
             <View style={styles.inputWrap}>
@@ -77,8 +148,11 @@ export const Cadastro = () => {
                 placeholderTextColor="rgba(255,255,255,0.6)"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                value={form.email}
+                onChangeText={(v) => atualizar('email', v)}
               />
             </View>
+            {erros.email ? <Text style={styles.erro}>{erros.email}</Text> : null}
 
             {/* Telefone */}
             <View style={styles.inputWrap}>
@@ -88,8 +162,11 @@ export const Cadastro = () => {
                 placeholder="Telefone"
                 placeholderTextColor="rgba(255,255,255,0.6)"
                 keyboardType="phone-pad"
+                value={form.telefone}
+                onChangeText={(v) => atualizar('telefone', v)}
               />
             </View>
+            {erros.telefone ? <Text style={styles.erro}>{erros.telefone}</Text> : null}
 
             {/* Senha */}
             <View style={styles.inputWrap}>
@@ -99,6 +176,8 @@ export const Cadastro = () => {
                 placeholder="Senha"
                 placeholderTextColor="rgba(255,255,255,0.6)"
                 secureTextEntry={!senhaVisivel}
+                value={form.senha}
+                onChangeText={(v) => atualizar('senha', v)}
               />
               <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)} style={styles.inputIconeDireita}>
                 <Ionicons
@@ -108,6 +187,7 @@ export const Cadastro = () => {
                 />
               </TouchableOpacity>
             </View>
+            {erros.senha ? <Text style={styles.erro}>{erros.senha}</Text> : null}
 
             {/* Endereço */}
             <View style={styles.inputWrap}>
@@ -117,12 +197,20 @@ export const Cadastro = () => {
                 placeholder="Endereço"
                 placeholderTextColor="rgba(255,255,255,0.6)"
                 autoCapitalize="words"
+                value={form.endereco}
+                onChangeText={(v) => atualizar('endereco', v)}
               />
             </View>
+            {erros.endereco ? <Text style={styles.erro}>{erros.endereco}</Text> : null}
 
-            {/* Botão Login */}
-            <TouchableOpacity style={styles.botao} onPress={() => navigation.navigate('Login' as never)} activeOpacity={0.85}>
-              <Text style={styles.botaoTexto}>Login</Text>
+            {/* Botão Cadastrar */}
+            <TouchableOpacity
+              style={[styles.botao, carregando && { opacity: 0.6 }]}
+              onPress={handleCadastrar}
+              activeOpacity={0.85}
+              disabled={carregando}
+            >
+              <Text style={styles.botaoTexto}>{carregando ? 'Salvando...' : 'Cadastrar'}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -173,7 +261,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.2)",
     borderRadius: 12,
-    marginBottom: 14,
+    marginBottom: 4,
     width: "100%",
     paddingHorizontal: 14,
     height: 50,
@@ -202,5 +290,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: cores.branco,
+  },
+  erro: {
+    alignSelf: 'flex-start',
+    fontSize: 11,
+    color: '#FFD0D0',
+    marginBottom: 10,
+    marginLeft: 4,
   },
 });

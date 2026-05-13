@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,11 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { cores } from '../../theme/cores';
+import { useAuth } from '../../context/AuthContext';
+import { getPets } from '../../services/storage';
+import { Pet } from '../../types/pet';
 
 
 const acoesRapidas = [
@@ -21,7 +23,16 @@ const acoesRapidas = [
 ];
 
 export const Home = () => {
-  const navigation = useNavigation();
+  const { usuario, logout } = useAuth();
+  const [pets, setPets] = useState<Pet[]>([]);
+
+  useEffect(() => {
+    if (usuario) {
+      getPets(usuario.idUsuario).then(setPets);
+    }
+  }, [usuario]);
+
+  const primeiroNome = usuario?.nome.split(' ')[0] ?? 'Usuário';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -33,12 +44,12 @@ export const Home = () => {
       >
         {/* HEADER */}
         <View style={styles.header}>
-          <Text style={styles.saudacao}>Olá, User! </Text>
+          <Text style={styles.saudacao}>Olá, {primeiroNome}! </Text>
           <View style={styles.headerAcoes}>
             <TouchableOpacity>
               <Ionicons name="notifications-outline" size={26} color={cores.cinzaEscuro} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.replace('Login')} style={styles.logoutBtn}>
+            <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
               <Ionicons name="log-out-outline" size={24} color={cores.roxoMedio} />
             </TouchableOpacity>
           </View>
@@ -48,21 +59,31 @@ export const Home = () => {
         <View style={styles.secao}>
           <View style={styles.cardPet}>
             <View style={styles.cardPetTopo}>
-              <Text style={styles.cardPetTitulo}>Seu pet</Text>
+              <Text style={styles.cardPetTitulo}>Seus pets</Text>
               <TouchableOpacity>
                 <Text style={styles.adicionarPet}>adicionar pet</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.petItem} activeOpacity={0.7}>
-              <View style={styles.petAvatar}>
-                <Ionicons name="paw" size={22} color={cores.branco} />
-              </View>
-              <View style={styles.petInfo}>
-                <Text style={styles.petNome}>Beluga</Text>
-                <Text style={styles.petRaca}>Golden Retriever · 3 anos</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={cores.branco} />
-            </TouchableOpacity>
+            {pets.length === 0 ? (
+              <Text style={styles.semPets}>Nenhum pet cadastrado ainda.</Text>
+            ) : (
+              pets.map((pet) => {
+                const anoNasc = new Date(pet.dtNascimento).getFullYear();
+                const idade = new Date().getFullYear() - anoNasc;
+                return (
+                  <TouchableOpacity key={pet.idPet} style={styles.petItem} activeOpacity={0.7}>
+                    <View style={styles.petAvatar}>
+                      <Ionicons name="paw" size={22} color={cores.branco} />
+                    </View>
+                    <View style={styles.petInfo}>
+                      <Text style={styles.petNome}>{pet.nome}</Text>
+                      <Text style={styles.petRaca}>{pet.raca} · {idade} {idade === 1 ? 'ano' : 'anos'}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={cores.branco} />
+                  </TouchableOpacity>
+                );
+              })
+            )}
           </View>
         </View>
 
@@ -170,6 +191,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginTop: 4,
+  },
+  semPets: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 8,
   },
   petAvatar: {
     width: 44,

@@ -9,17 +9,39 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { cores } from '../../theme/cores';
 import { PawBackground } from '../../components/PawBackground';
-
+import { useAuth } from '../../context/AuthContext';
 
 export const Login = () => {
   const navigation = useNavigation();
+  const { login } = useAuth();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+
+  const handleLogin = async () => {
+    if (!email.trim() || !senha.trim()) {
+      Alert.alert('Atenção', 'Preencha e-mail e senha.');
+      return;
+    }
+    setCarregando(true);
+    try {
+      const sucesso = await login(email.trim(), senha);
+      if (!sucesso) {
+        Alert.alert('Erro', 'E-mail ou senha incorretos.');
+      }
+      // Se sucesso, o AuthContext atualiza `usuario` e o App.tsx redireciona automaticamente para Home
+    } finally {
+      setCarregando(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -44,6 +66,8 @@ export const Login = () => {
               placeholderTextColor="rgba(255,255,255,0.6)"
               keyboardType="email-address"
               autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
 
@@ -55,6 +79,8 @@ export const Login = () => {
               placeholder="Senha"
               placeholderTextColor="rgba(255,255,255,0.6)"
               secureTextEntry={!senhaVisivel}
+              value={senha}
+              onChangeText={setSenha}
             />
             <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)} style={styles.inputIconeDireita}>
               <Ionicons
@@ -71,12 +97,17 @@ export const Login = () => {
           </TouchableOpacity>
 
           {/* Botão Login */}
-          <TouchableOpacity style={styles.botaoLogin} onPress={() => navigation.navigate('Home')} activeOpacity={0.85}>  
-            <Text style={styles.botaoLoginTexto}>Login</Text>
+          <TouchableOpacity
+            style={[styles.botaoLogin, carregando && { opacity: 0.6 }]}
+            onPress={handleLogin}
+            activeOpacity={0.85}
+            disabled={carregando}
+          >
+            <Text style={styles.botaoLoginTexto}>{carregando ? 'Entrando...' : 'Login'}</Text>
           </TouchableOpacity>
 
           {/* Criar conta */}
-          <TouchableOpacity style={styles.criarContaWrap} onPress={() => navigation.navigate('Cadastro')} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.criarContaWrap} onPress={() => navigation.navigate('Cadastro' as never)} activeOpacity={0.85}>
             <Text style={styles.criarContaTexto}>Crie uma nova conta?</Text>
           </TouchableOpacity>
         </View>
