@@ -103,19 +103,19 @@ export const Home = () => {
         </View>
 
         {/* AÇÕES RÁPIDAS */}
-        <View style={[styles.secao, styles.ultimaSecao]}>
-          <Text style={styles.secaoTitulo}>Ações rápidas</Text>
-          <View style={styles.acoesGrid}>
-            {acoesRapidas.map((acao) => (
-              <TouchableOpacity key={acao.id} style={styles.acaoItem} activeOpacity={0.8}>
-                <View style={styles.acaoIconeWrap}>
-                  <Ionicons name={acao.icone} size={26} color={cores.roxoMedio} />
-                </View>
-                <Text style={styles.acaoLabel}>{acao.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+      {/*<View style={[styles.secao, styles.ultimaSecao]}>
+        <Text style={styles.secaoTitulo}>Ações rápidas</Text>
+        <View style={styles.acoesGrid}>
+          {acoesRapidas.map((acao) => (
+            <TouchableOpacity key={acao.id} style={styles.acaoItem} activeOpacity={0.8}>
+              <View style={styles.acaoIconeWrap}>
+                <Ionicons name={acao.icone} size={26} color={cores.roxoMedio} />
+              </View>
+              <Text style={styles.acaoLabel}>{acao.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </View>*/}
       </ScrollView>
     </SafeAreaView>
   );
