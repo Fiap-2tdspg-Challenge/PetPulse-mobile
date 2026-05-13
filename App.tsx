@@ -12,7 +12,8 @@ import { Perfil } from './src/screens/perfil/Perfil';
 import { PerfilPet } from './src/screens/perfilPet/perfilPet';
 import { HistoricoClinico } from './src/screens/historicoClinico/historicoClinico';
 import { LocalizaPet } from './src/screens/localizaPet/LocalizaPet';
-import { CadastraPet } from './src/screens/cadastraPet/cadastraPet';
+import { CadastraPet } from './src/screens/cadastraPet/CadastraPet';
+
 
 const Stack = createNativeStackNavigator();
 
