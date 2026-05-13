@@ -11,9 +11,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { cores } from '../../theme/cores';
 
 export const Login = () => {
+  const navigation = useNavigation();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
 
   return (
@@ -64,7 +66,7 @@ export const Login = () => {
           </TouchableOpacity>
 
           {/* Botão Login */}
-          <TouchableOpacity style={styles.botaoLogin} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.botaoLogin} onPress={() => navigation.replace('Home')} activeOpacity={0.85}>  
             <Text style={styles.botaoLoginTexto}>Login</Text>
           </TouchableOpacity>
 
