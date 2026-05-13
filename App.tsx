@@ -8,6 +8,11 @@ import { Login } from './src/screens/login/Login';
 import { Cadastro } from './src/screens/cadastro/Cadastro';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { cores } from './src/theme/cores';
+import { Perfil } from './src/screens/perfil/Perfil';
+import { PerfilPet } from './src/screens/perfilPet/perfilPet';
+import { HistoricoClinico } from './src/screens/historicoClinico/historicoClinico';
+import { LocalizaPet } from './src/screens/localizaPet/LocalizaPet';
+import { CadastraPet } from './src/screens/cadastraPet/cadastraPet';
 
 const Stack = createNativeStackNavigator();
 
@@ -25,7 +30,14 @@ function Routes() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {usuario ? (
-        <Stack.Screen name="Home" component={Home} />
+        <>
+          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen name="Perfil" component={Perfil} />
+          <Stack.Screen name="MeuPet" component={PerfilPet} />
+          <Stack.Screen name="HistoricoClinico" component={HistoricoClinico} />
+          <Stack.Screen name="LocalizaPet" component={LocalizaPet} />
+          <Stack.Screen name="CadastraPet" component={CadastraPet} />
+        </>
       ) : (
         <>
           <Stack.Screen name="Login" component={Login} />

@@ -13,6 +13,8 @@ import { cores } from '../../theme/cores';
 import { useAuth } from '../../context/AuthContext';
 import { getPets } from '../../services/storage';
 import { Pet } from '../../types/pet';
+import { Footer } from '../../components/Footer';
+import { useNavigation } from '@react-navigation/native';
 
 
 const acoesRapidas = [
@@ -23,6 +25,7 @@ const acoesRapidas = [
 ];
 
 export const Home = () => {
+  const navigation = useNavigation();
   const { usuario, logout } = useAuth();
   const [pets, setPets] = useState<Pet[]>([]);
 
@@ -60,7 +63,7 @@ export const Home = () => {
           <View style={styles.cardPet}>
             <View style={styles.cardPetTopo}>
               <Text style={styles.cardPetTitulo}>Seus pets</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => {navigation.navigate('CadastraPet' as never)}} >
                 <Text style={styles.adicionarPet}>adicionar pet</Text>
               </TouchableOpacity>
             </View>
@@ -117,6 +120,7 @@ export const Home = () => {
         </View>
       </View>*/}
       </ScrollView>
+      <Footer/>
     </SafeAreaView>
   );
 };
