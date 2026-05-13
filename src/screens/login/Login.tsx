@@ -66,12 +66,12 @@ export const Login = () => {
           </TouchableOpacity>
 
           {/* Botão Login */}
-          <TouchableOpacity style={styles.botaoLogin} onPress={() => navigation.replace('Home')} activeOpacity={0.85}>  
+          <TouchableOpacity style={styles.botaoLogin} onPress={() => navigation.navigate('Home')} activeOpacity={0.85}>  
             <Text style={styles.botaoLoginTexto}>Login</Text>
           </TouchableOpacity>
 
           {/* Criar conta */}
-          <TouchableOpacity style={styles.criarContaWrap}>
+          <TouchableOpacity style={styles.criarContaWrap} onPress={() => navigation.navigate('Cadastro')} activeOpacity={0.85}>
             <Text style={styles.criarContaTexto}>Crie uma nova conta?</Text>
           </TouchableOpacity>
         </View>
