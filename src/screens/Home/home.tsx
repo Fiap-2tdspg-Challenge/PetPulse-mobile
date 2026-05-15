@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getPets } from '../../services/storage';
 import { Pet } from '../../types/pet';
 import { Footer } from '../../components/Footer';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 
 const acoesRapidas = [
@@ -29,11 +29,13 @@ export const Home = () => {
   const { usuario, logout } = useAuth();
   const [pets, setPets] = useState<Pet[]>([]);
 
-  useEffect(() => {
-    if (usuario) {
-      getPets(usuario.idUsuario).then(setPets);
-    }
-  }, [usuario]);
+  useFocusEffect(
+    useCallback(() => {
+      if (usuario) {
+        getPets(usuario.idUsuario).then(setPets);
+      }
+    }, [usuario])
+  );
 
   const primeiroNome = usuario?.nome.split(' ')[0] ?? 'Usuário';
 
@@ -74,7 +76,7 @@ export const Home = () => {
                 const anoNasc = new Date(pet.dtNascimento).getFullYear();
                 const idade = new Date().getFullYear() - anoNasc;
                 return (
-                  <TouchableOpacity key={pet.idPet} style={styles.petItem} activeOpacity={0.7}>
+                  <TouchableOpacity key={pet.idPet} style={styles.petItem} activeOpacity={0.7} onPress={() => navigation.navigate('MeuPet' as never, { pet } as never)}>
                     <View style={styles.petAvatar}>
                       <Ionicons name="paw" size={22} color={cores.branco} />
                     </View>
