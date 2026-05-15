@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Usuario } from '../types/usuario';
-import { getUsuarios } from '../services/storage';
+import { getUsuarios, updateUsuario } from '../services/storage';
 
 const SESSAO_KEY = '@petpulse:sessao';
 
@@ -10,6 +10,7 @@ interface AuthContextData {
   carregando: boolean;
   login: (email: string, senha: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  atualizarUsuario: (dados: Usuario) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
@@ -51,8 +52,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUsuario(null);
   };
 
+  const atualizarUsuario = async (dados: Usuario) => {
+    await updateUsuario(dados);
+    setUsuario(dados);
+  };
+
   return (
-    <AuthContext.Provider value={{ usuario, carregando, login, logout }}>
+    <AuthContext.Provider value={{ usuario, carregando, login, logout, atualizarUsuario }}>
       {children}
     </AuthContext.Provider>
   );

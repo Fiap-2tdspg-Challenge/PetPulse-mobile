@@ -7,6 +7,8 @@ import { PerfilPet } from "../screens/perfilPet/perfilPet";
 import { HistoricoClinico } from "../screens/historicoClinico/historicoClinico";
 import { LocalizaPet } from "../screens/localizaPet/LocalizaPet";
 import { CadastraPet } from "../screens/cadastraPet/CadastraPet";
+import { EditaPet } from "../screens/editaPet/EditaPet";
+import { EditaPerfil } from "../screens/editaPerfil/EditaPerfil";
 import { ActivityIndicator, View } from "react-native";
 import { Login } from "../screens/login/Login";
 import { Cadastro } from "../screens/cadastro/Cadastro";
@@ -34,6 +36,8 @@ if (carregando) {
           <Stack.Screen name="HistoricoClinico" component={HistoricoClinico} />
           <Stack.Screen name="LocalizaPet" component={LocalizaPet} />
           <Stack.Screen name="CadastraPet" component={CadastraPet} />
+          <Stack.Screen name="EditaPet" component={EditaPet} />
+          <Stack.Screen name="EditaPerfil" component={EditaPerfil} />
         </>
       ) : (
         <>

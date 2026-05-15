@@ -66,3 +66,17 @@ export async function savePet(
   await AsyncStorage.setItem(KEYS.PETS, JSON.stringify([...pets, novoPet]));
   return novoPet;
 }
+
+export async function updatePet(petAtualizado: Pet): Promise<void> {
+  const pets = await getPets();
+  const atualizados = pets.map((p) => (p.idPet === petAtualizado.idPet ? petAtualizado : p));
+  await AsyncStorage.setItem(KEYS.PETS, JSON.stringify(atualizados));
+}
+
+export async function updateUsuario(usuarioAtualizado: Usuario): Promise<void> {
+  const usuarios = await getUsuarios();
+  const atualizados = usuarios.map((u) =>
+    u.idUsuario === usuarioAtualizado.idUsuario ? usuarioAtualizado : u
+  );
+  await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify(atualizados));
+}

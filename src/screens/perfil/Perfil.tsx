@@ -74,7 +74,12 @@ export const Perfil = () => {
           <Ionicons name="arrow-back" size={22} color={cores.branco} />
         </TouchableOpacity>
         <Text style={styles.headerTitulo}>Meu Perfil</Text>
-        <View style={{ width: 36 }} />
+        <TouchableOpacity
+          style={styles.voltarBtn}
+          onPress={() => navigation.navigate("EditaPerfil" as never)}
+        >
+          <Ionicons name="create-outline" size={22} color={cores.branco} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>

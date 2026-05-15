@@ -165,6 +165,16 @@ export const PerfilPet = () => {
           </TouchableOpacity>
         </View>
 
+        {/* EDITAR PET */}
+        <TouchableOpacity
+          style={styles.editarBtn}
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate("EditaPet" as never, { pet } as never)}
+        >
+          <Ionicons name="create-outline" size={20} color={cores.roxoMedio} />
+          <Text style={styles.editarBtnTexto}>Editar informações do pet</Text>
+        </TouchableOpacity>
+
       </ScrollView>
       <Footer />
     </SafeAreaView>
@@ -283,5 +293,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     textAlign: "center",
+  },
+  editarBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: cores.branco,
+    borderWidth: 1,
+    borderColor: cores.roxoClaro,
+  },
+  editarBtnTexto: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: cores.roxoMedio,
   },
 });
