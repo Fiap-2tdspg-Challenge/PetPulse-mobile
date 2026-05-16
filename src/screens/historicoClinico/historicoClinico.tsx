@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import {
     ActivityIndicator,
     ScrollView,
@@ -10,7 +10,7 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useRoute } from "@react-navigation/native"
 import { cores } from "../../theme/cores"
 import { useAuth } from "../../context/AuthContext"
 import { getHistorico, getPets } from "../../services/storage"
@@ -54,7 +54,10 @@ type Categoria = typeof CATEGORIAS[number]
 
 export const HistoricoClinico = () => {
     const navigation = useNavigation()
+    const route = useRoute()
     const { usuario } = useAuth()
+    const categoriaInicial = (route.params as { categoriaInicial?: TipoRegistro } | undefined)?.categoriaInicial
+    const categoriaInicialAbertaRef = useRef(false)
 
     const [pets, setPets] = useState<Pet[]>([])
     const [petSelecionado, setPetSelecionado] = useState<Pet | null>(null)
@@ -70,6 +73,14 @@ export const HistoricoClinico = () => {
             setCarregando(false)
         })
     }, [usuario])
+
+    useEffect(() => {
+        if (petSelecionado && categoriaInicial && !categoriaInicialAbertaRef.current) {
+            categoriaInicialAbertaRef.current = true
+            const cat = CATEGORIAS.find((c) => c.tipo === categoriaInicial)
+            if (cat) abrirCategoria(cat)
+        }
+    }, [petSelecionado])
 
     const abrirCategoria = useCallback(async (cat: Categoria) => {
         if (!petSelecionado) return

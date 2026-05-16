@@ -2,14 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Usuario } from '../types/usuario';
 import { Pet } from '../types/pet';
 import { HistoricoClinico } from '../types/historicoClinico';
+import { AlertaInteligente } from '../types/alertaInteligente';
 import { mockUsuario } from '../mocks/usuario';
 import { mockPets } from '../mocks/pet';
 import { mockHistorico } from '../mocks/historicoClinico';
+import { mockAlertas } from '../mocks/alertaInteligente';
 
 const KEYS = {
   USUARIOS: '@petpulse:usuarios',
   PETS: '@petpulse:pets',
   HISTORICO: '@petpulse:historico_v2',
+  ALERTAS: '@petpulse:alertas',
 };
 
 // ── USUÁRIOS ─────────────────────────────────────────────────────────────────
@@ -106,11 +109,22 @@ export async function saveHistorico(
   return novo;
 }
 
+// ── ALERTAS ────────────────────────────────────────────────────────────────
+
+export async function getAlertas(idsPets?: number[]): Promise<AlertaInteligente[]> {
+  const raw = await AsyncStorage.getItem(KEYS.ALERTAS);
+  if (!raw) {
+    await AsyncStorage.setItem(KEYS.ALERTAS, JSON.stringify(mockAlertas));
+    return idsPets ? mockAlertas.filter((a) => idsPets.includes(a.idPet)) : mockAlertas;
+  }
+  const alertas = JSON.parse(raw) as AlertaInteligente[];
+  return idsPets ? alertas.filter((a) => idsPets.includes(a.idPet)) : alertas;
+}
+
 // ── SEED (dev) ────────────────────────────────────────────────────────────────
-// Força a carga dos mocks no AsyncStorage.
-// Chame no startup do app durante desenvolvimento.
 export async function seedStorage(): Promise<void> {
   await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify([mockUsuario]));
   await AsyncStorage.setItem(KEYS.PETS, JSON.stringify(mockPets));
   await AsyncStorage.setItem(KEYS.HISTORICO, JSON.stringify(mockHistorico));
+  await AsyncStorage.setItem(KEYS.ALERTAS, JSON.stringify(mockAlertas));
 }
