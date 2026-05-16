@@ -1,10 +1,10 @@
 export type TipoRegistro =
-   'VACINA'
-   'CONSULTA'
-   'EXAME'
-   'MEDICACAO'
-   'CIRURGIA'
-   'OUTRO';
+  | 'VACINA'
+  | 'CONSULTA'
+  | 'EXAME'
+  | 'MEDICACAO'
+  | 'CIRURGIA'
+  | 'OUTRO';
 
 export interface HistoricoClinico {
   idHistorico: number;

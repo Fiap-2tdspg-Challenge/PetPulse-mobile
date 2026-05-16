@@ -13,13 +13,16 @@ import * as Location from "expo-location"
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps"
 import { Ionicons } from "@expo/vector-icons"
 import { cores } from "../../theme/cores"
-import { mockPets } from "../../mocks/pet"
+import { getPets } from "../../services/storage"
+import { useAuth } from "../../context/AuthContext"
+import { Pet } from "../../types/pet"
 import { Footer } from "../../components/Footer"
 
-const PET = mockPets[0]
 const GOOGLE_KEY = "AIzaSyCatanT-4IDSa4eEOGZGrb6eH1r9CIyEyo"
 
 export const LocalizaPet = () => {
+    const { usuario } = useAuth()
+    const [pet, setPet] = useState<Pet | null>(null)
     const [location, setLocation] = useState<Location.LocationObject | null>(null)
     const [address, setAddress] = useState<string | null>(null)
     const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
@@ -80,6 +83,11 @@ export const LocalizaPet = () => {
     }
 
     useEffect(() => {
+        if (!usuario) return
+        getPets(usuario.idUsuario).then((pets) => setPet(pets[0] ?? null))
+    }, [usuario])
+
+    useEffect(() => {
         startTracking()
         return () => { subscriptionRef.current?.remove() }
     }, [])
@@ -104,7 +112,7 @@ export const LocalizaPet = () => {
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.petName}>{PET?.nome ?? "Pet"}</Text>
+                    <Text style={styles.petName}>{pet?.nome ?? "Pet"}</Text>
 
                     {/* Mapa Google */}
                     <View style={styles.mapContainer}>
@@ -143,7 +151,7 @@ export const LocalizaPet = () => {
                                         latitude: location.coords.latitude,
                                         longitude: location.coords.longitude,
                                     }}
-                                    title={PET?.nome}
+                                    title={pet?.nome}
                                     description="Localização atual do pet"
                                     pinColor={cores.roxoMedio}
                                 />
