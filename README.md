@@ -12,6 +12,7 @@ Aplicativo mobile desenvolvido em **React Native + Expo** para gerenciamento com
 - [Pré-requisitos](#pré-requisitos)
 - [Instalação e execução](#instalação-e-execução)
 - [Link do vídeo](#link-do-vídeo)
+- [Link do figma](#link-do-figma)
 - [Dados de teste](#dados-de-teste)
 - [Screens](#screens)
 - [Modelos de dados](#modelos-de-dados)
@@ -110,10 +111,13 @@ npm run web        # Web (experimental)
 
 ---
 
-
 ## Link do vídeo
 https://youtu.be/UXRha04ULPo
 
+---
+
+## Link do figma
+https://www.figma.com/design/azNxLqmfQtd8EnDj1zAQfV/PetPulse?node-id=92-313&t=c9dJiuZnI4zCH66f-0
 
 ---
 ## Dados de teste
