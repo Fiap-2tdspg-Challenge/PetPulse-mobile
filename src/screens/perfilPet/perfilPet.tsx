@@ -163,6 +163,15 @@ export const PerfilPet = () => {
             <Ionicons name="location-outline" size={22} color={cores.branco} />
             <Text style={styles.acaoBtnTexto}>Localizar{"\n"}Pet</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.acaoBtn}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate("Coleira" as never, { pet } as never)}
+          >
+            <Ionicons name="pulse-outline" size={22} color={cores.branco} />
+            <Text style={styles.acaoBtnTexto}>Coleira{"\n"}Inteligente</Text>
+          </TouchableOpacity>
         </View>
 
         {/* EDITAR PET */}
@@ -275,14 +284,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginHorizontal: 20,
     marginTop: 16,
-    gap: 12,
-  
+    gap: 10,
+
   },
   acaoBtn: {
     flex: 1,
     backgroundColor: cores.roxoPrimario,
     borderRadius: 14,
     paddingVertical: 16,
+    paddingHorizontal: 4,
     alignItems: "center",
     gap: 8,
     borderWidth: 1,
@@ -290,7 +300,7 @@ const styles = StyleSheet.create({
   },
   acaoBtnTexto: {
     color: cores.branco,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
     textAlign: "center",
   },
