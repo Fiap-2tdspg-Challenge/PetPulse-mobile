@@ -12,7 +12,7 @@ import { ActivityIndicator, View } from "react-native";
 import { Login } from "../screens/login/Login";
 import { Cadastro } from "../screens/cadastro/Cadastro";
 import { EditaPet } from "../screens/editaPet/EditaPet";
-import { Coleira } from "../screens/coleira/coleitra";
+import { Coleira } from "../screens/coleira/coleira";
 
 export const Routes = () => {
 
