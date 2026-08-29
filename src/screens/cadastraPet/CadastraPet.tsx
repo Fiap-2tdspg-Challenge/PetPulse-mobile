@@ -16,14 +16,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
-import { savePet } from "../../services/storage";
+import { useCreatePet } from "../../hooks/usePets";
 import { useAuth } from "../../context/AuthContext";
 import { Porte, Sexo } from "../../types/pet";
 
 export const CadastraPet = () => {
   const navigation = useNavigation();
   const { usuario } = useAuth();
-  const [carregando, setCarregando] = useState(false);
+  const criarPet = useCreatePet();
+  const carregando = criarPet.isPending;
 
   const [form, setForm] = useState({
     nome: "",
@@ -79,9 +80,8 @@ export const CadastraPet = () => {
       return;
     }
 
-    setCarregando(true);
     try {
-      await savePet({
+      await criarPet.mutateAsync({
         idUsuario: usuario.idUsuario,
         nome: form.nome.trim(),
         especie: form.especie.trim(),
@@ -97,8 +97,6 @@ export const CadastraPet = () => {
       ]);
     } catch {
       Alert.alert("Erro", "Não foi possível cadastrar o pet. Tente novamente.");
-    } finally {
-      setCarregando(false);
     }
   };
 

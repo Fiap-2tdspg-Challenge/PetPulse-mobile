@@ -122,9 +122,21 @@ export async function getAlertas(idsPets?: number[]): Promise<AlertaInteligente[
 }
 
 // ── SEED (dev) ────────────────────────────────────────────────────────────────
+// Semeia apenas as chaves ainda inexistentes, para não apagar dados já
+// cadastrados pelo usuário a cada vez que o app é aberto.
 export async function seedStorage(): Promise<void> {
-  await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify([mockUsuario]));
-  await AsyncStorage.setItem(KEYS.PETS, JSON.stringify(mockPets));
-  await AsyncStorage.setItem(KEYS.HISTORICO, JSON.stringify(mockHistorico));
-  await AsyncStorage.setItem(KEYS.ALERTAS, JSON.stringify(mockAlertas));
+  const [usuarios, pets, historico, alertas] = await Promise.all([
+    AsyncStorage.getItem(KEYS.USUARIOS),
+    AsyncStorage.getItem(KEYS.PETS),
+    AsyncStorage.getItem(KEYS.HISTORICO),
+    AsyncStorage.getItem(KEYS.ALERTAS),
+  ]);
+
+  const pendentes: Promise<void>[] = [];
+  if (!usuarios) pendentes.push(AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify([mockUsuario])));
+  if (!pets) pendentes.push(AsyncStorage.setItem(KEYS.PETS, JSON.stringify(mockPets)));
+  if (!historico) pendentes.push(AsyncStorage.setItem(KEYS.HISTORICO, JSON.stringify(mockHistorico)));
+  if (!alertas) pendentes.push(AsyncStorage.setItem(KEYS.ALERTAS, JSON.stringify(mockAlertas)));
+
+  await Promise.all(pendentes);
 }

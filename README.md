@@ -39,11 +39,14 @@ Aplicativo mobile desenvolvido em **React Native + Expo** para gerenciamento com
 | Framework | React Native `0.81.5` + Expo `~54.0.33` |
 | Linguagem | TypeScript `~5.9.2` |
 | Navegação | React Navigation v7 (Native Stack + Bottom Tabs) |
+| Busca/cache de dados | TanStack Query (`@tanstack/react-query`) |
 | Persistência local | AsyncStorage `2.2.0` |
 | Localização | expo-location `~19.0.8` |
 | Mapas | react-native-maps `1.20.1` |
 | Gradientes | expo-linear-gradient `~15.0.8` |
 | Ícones | @expo/vector-icons `^15.1.1` |
+
+> **Nota sobre a camada de dados**: o backend/API ainda está em desenvolvimento nas disciplinas de Java/.NET. Enquanto isso, os hooks em `src/hooks/` (TanStack Query) leem e gravam no AsyncStorage local através de `src/services/storage.ts`. A UI já consome tudo via `useQuery`/`useMutation` — quando a API estiver pronta, só a implementação interna dos hooks muda para chamadas HTTP, sem alterar as telas.
 
 ---
 
@@ -56,10 +59,11 @@ PetPulse-mobile/
 │   ├── components/          # Componentes reutilizáveis (Footer, PawBackground)
 │   ├── context/
 │   │   └── AuthContext.tsx  # Contexto de autenticação
+│   ├── hooks/                # Hooks de dados (TanStack Query) — usePets, useHistorico, useAlertas
 │   ├── mocks/               # Dados iniciais para semeadura do AsyncStorage
 │   ├── routes/
 │   │   └── Routes.tsx       # Definição das rotas (autenticado / não autenticado)
-│   ├── screens/             # Telas da aplicação
+│   ├── screens/             # Telas da aplicação (somente UI, sem lógica de dados)
 │   │   ├── login/
 │   │   ├── cadastro/
 │   │   ├── Home/
@@ -71,10 +75,12 @@ PetPulse-mobile/
 │   │   ├── historicoClinico/
 │   │   └── localizaPet/
 │   ├── services/
-│   │   └── storage.ts       # Camada de acesso ao AsyncStorage
+│   │   ├── storage.ts       # Camada de acesso ao AsyncStorage (fonte de dados atual)
+│   │   └── queryClient.ts   # Instância do QueryClient do TanStack Query
 │   ├── theme/
 │   │   └── cores.ts         # Paleta de cores e gradientes
-│   └── types/               # Interfaces TypeScript dos modelos de domínio
+│   ├── types/               # Interfaces TypeScript dos modelos de domínio
+│   └── utils/                # Funções puras de regra de negócio (ex: cálculo de lembretes)
 └── android/ ios/            # Projetos nativos gerados pelo Expo
 ```
 
@@ -100,10 +106,14 @@ cd PetPulse-mobile
 # 2. Instale as dependências
 npm install
 
-# 3. Inicie o servidor de desenvolvimento
+# 3. Configure as variáveis de ambiente
+cp .env.example .env
+# preencha EXPO_PUBLIC_GOOGLE_MAPS_KEY com uma chave válida do Google Maps
+
+# 4. Inicie o servidor de desenvolvimento
 npm expo start          # abre o Metro Bundler
 
-# 4. Execute na plataforma desejada
+# 5. Execute na plataforma desejada
 npm run android    # Android
 npm run ios        # iOS (requer macOS)
 npm run web        # Web (experimental)

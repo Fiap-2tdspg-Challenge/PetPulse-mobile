@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import {
     ActivityIndicator,
     ScrollView,
@@ -13,9 +13,10 @@ import { Ionicons } from "@expo/vector-icons"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { cores } from "../../theme/cores"
 import { useAuth } from "../../context/AuthContext"
-import { getHistorico, getPets } from "../../services/storage"
+import { usePets } from "../../hooks/usePets"
+import { useHistorico } from "../../hooks/useHistorico"
 import { Pet } from "../../types/pet"
-import { HistoricoClinico as HistoricoClinicoType, TipoRegistro } from "../../types/historicoClinico"
+import { TipoRegistro } from "../../types/historicoClinico"
 import { Footer } from "../../components/Footer"
 
 const CATEGORIAS: Array<{
@@ -59,44 +60,45 @@ export const HistoricoClinico = () => {
     const categoriaInicial = (route.params as { categoriaInicial?: TipoRegistro } | undefined)?.categoriaInicial
     const categoriaInicialAbertaRef = useRef(false)
 
-    const [pets, setPets] = useState<Pet[]>([])
+    const { data: pets = [], isLoading: carregandoPets } = usePets(usuario?.idUsuario)
     const [petSelecionado, setPetSelecionado] = useState<Pet | null>(null)
     const [categoriaAberta, setCategoriaAberta] = useState<Categoria | null>(null)
-    const [registros, setRegistros] = useState<HistoricoClinicoType[]>([])
-    const [carregando, setCarregando] = useState(true)
 
     useEffect(() => {
-        if (!usuario) return
-        getPets(usuario.idUsuario).then((lista) => {
-            setPets(lista)
-            setPetSelecionado(lista[0] ?? null)
-            setCarregando(false)
-        })
-    }, [usuario])
+        if (pets.length > 0 && !petSelecionado) {
+            setPetSelecionado(pets[0])
+        }
+    }, [pets, petSelecionado])
 
     useEffect(() => {
         if (petSelecionado && categoriaInicial && !categoriaInicialAbertaRef.current) {
             categoriaInicialAbertaRef.current = true
             const cat = CATEGORIAS.find((c) => c.tipo === categoriaInicial)
-            if (cat) abrirCategoria(cat)
+            if (cat) setCategoriaAberta(cat)
         }
     }, [petSelecionado])
 
-    const abrirCategoria = useCallback(async (cat: Categoria) => {
+    const { data: historicoPet = [], isLoading: carregandoHistorico } = useHistorico(
+        petSelecionado?.idPet,
+        { enabled: !!categoriaAberta }
+    )
+
+    const registros = useMemo(() => {
+        if (!categoriaAberta) return []
+        return historicoPet
+            .filter((r) => r.tipoRegistro === categoriaAberta.tipo)
+            .sort((a, b) => new Date(b.dtRegistro).getTime() - new Date(a.dtRegistro).getTime())
+    }, [historicoPet, categoriaAberta])
+
+    const carregando = categoriaAberta ? carregandoHistorico : carregandoPets
+
+    const abrirCategoria = (cat: Categoria) => {
         if (!petSelecionado) return
         setCategoriaAberta(cat)
-        setCarregando(true)
-        const dados = await getHistorico(petSelecionado.idPet)
-        const filtrados = dados
-            .filter((r) => r.tipoRegistro === cat.tipo)
-            .sort((a, b) => new Date(b.dtRegistro).getTime() - new Date(a.dtRegistro).getTime())
-        setRegistros(filtrados)
-        setCarregando(false)
-    }, [petSelecionado])
+    }
 
     const voltarMenu = () => {
         setCategoriaAberta(null)
-        setRegistros([])
     }
 
     /* ── TELA DE DETALHE ── */

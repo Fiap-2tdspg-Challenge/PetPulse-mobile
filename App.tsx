@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './src/context/AuthContext';
 import { Routes } from './src/routes/Routes';
 import { seedStorage } from './src/services/storage';
+import { queryClient } from './src/services/queryClient';
 
 export default function App() {
   useEffect(() => {
@@ -12,11 +14,13 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <NavigationContainer>
-          <Routes />
-        </NavigationContainer>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <NavigationContainer>
+            <Routes />
+          </NavigationContainer>
+        </AuthProvider>
+      </QueryClientProvider>
     </SafeAreaProvider>
   );
 }

@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
-import { updatePet } from "../../services/storage";
+import { useUpdatePet } from "../../hooks/usePets";
 import { Pet, Porte, Sexo } from "../../types/pet";
 
 function isoParaDisplay(iso: string): string {
@@ -34,7 +34,8 @@ export const EditaPet = () => {
   const route = useRoute();
   const pet = (route.params as { pet: Pet }).pet;
 
-  const [carregando, setCarregando] = useState(false);
+  const atualizarPet = useUpdatePet();
+  const carregando = atualizarPet.isPending;
 
   const [form, setForm] = useState({
     nome: pet.nome,
@@ -80,7 +81,6 @@ export const EditaPet = () => {
 
   const handleSalvar = async () => {
     if (!validar()) return;
-    setCarregando(true);
     try {
       const petAtualizado: Pet = {
         ...pet,
@@ -93,14 +93,12 @@ export const EditaPet = () => {
         castrado,
         porte,
       };
-      await updatePet(petAtualizado);
+      await atualizarPet.mutateAsync(petAtualizado);
       Alert.alert("Sucesso", "Pet atualizado com sucesso!", [
         { text: "OK", onPress: () => navigation.navigate("MeuPet" as never, { pet: petAtualizado } as never) },
       ]);
     } catch {
       Alert.alert("Erro", "Não foi possível atualizar o pet. Tente novamente.");
-    } finally {
-      setCarregando(false);
     }
   };
 

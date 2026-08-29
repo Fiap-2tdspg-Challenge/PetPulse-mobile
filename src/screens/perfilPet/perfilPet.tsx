@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { cores } from "../../theme/cores";
 import { Footer } from "../../components/Footer";
 import { Pet } from "../../types/pet";
 import { useAuth } from "../../context/AuthContext";
-import { getPets } from "../../services/storage";
+import { usePets } from "../../hooks/usePets";
 
 const PORTE_LABEL: Record<string, string> = {
   PEQUENO: "Pequeno",
@@ -61,17 +61,9 @@ export const PerfilPet = () => {
   const route = useRoute();
   const { usuario } = useAuth();
   const petParam = (route.params as { pet: Pet } | undefined)?.pet;
-  const [pet, setPet] = useState<Pet | null>(petParam ?? null);
-  const [carregando, setCarregando] = useState(!petParam);
-
-  useEffect(() => {
-    if (!petParam && usuario) {
-      getPets(usuario.idUsuario).then((lista) => {
-        setPet(lista[0] ?? null);
-        setCarregando(false);
-      });
-    }
-  }, [petParam, usuario]);
+  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.idUsuario : undefined);
+  const pet = petParam ?? pets?.[0] ?? null;
+  const carregando = !petParam && carregandoPets;
 
   if (carregando) {
     return (

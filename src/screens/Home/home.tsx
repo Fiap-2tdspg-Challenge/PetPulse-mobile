@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { cores } from '../../theme/cores';
 import { useAuth } from '../../context/AuthContext';
-import { getAlertas, getHistorico, getPets } from '../../services/storage';
-import { Pet } from '../../types/pet';
-import { AlertaInteligente } from '../../types/alertaInteligente';
-import { HistoricoClinico as HistoricoClinicoType } from '../../types/historicoClinico';
+import { usePets } from '../../hooks/usePets';
+import { useAlertasPendentes } from '../../hooks/useAlertas';
+import { useHistoricosDeVariosPets } from '../../hooks/useHistorico';
+import { calcularProximoRetorno } from '../../utils/lembretes';
 import { Footer } from '../../components/Footer';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
@@ -50,46 +51,24 @@ function textoFaltam(dias: number): string {
   return `Faltam ${dias} dias`;
 }
 
-type Lembrete = { descricao: string; dtRetorno: string; petNome: string };
-
 export const Home = () => {
   const navigation = useNavigation();
   const { usuario, logout } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [pets, setPets]       = useState<Pet[]>([]);
-  const [alertas, setAlertas] = useState<AlertaInteligente[]>([]);
-  const [lembrete, setLembrete] = useState<Lembrete | null>(null);
+  const { data: pets = [] } = usePets(usuario?.idUsuario);
+  const idsPets = useMemo(() => pets.map((p) => p.idPet), [pets]);
+  const { data: alertas = [] } = useAlertasPendentes(idsPets);
+  const { data: historicos } = useHistoricosDeVariosPets(idsPets);
+  const lembrete = useMemo(() => calcularProximoRetorno(historicos, pets), [historicos, pets]);
 
   useFocusEffect(
     useCallback(() => {
       if (!usuario) return;
-
-      getPets(usuario.idUsuario).then(async (lista) => {
-        setPets(lista);
-        const ids = lista.map((p) => p.idPet);
-
-        // alertas PENDENTE do usuário
-        const al = await getAlertas(ids);
-        setAlertas(al.filter((a) => a.status === 'PENDENTE'));
-
-        // próximo retorno agendado
-        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-        const todos: HistoricoClinicoType[] = (
-          await Promise.all(ids.map((pid) => getHistorico(pid)))
-        ).flat();
-        const proximos = todos
-          .filter((r) => r.dtRetorno && new Date(r.dtRetorno) >= hoje)
-          .sort((a, b) => new Date(a.dtRetorno!).getTime() - new Date(b.dtRetorno!).getTime());
-
-        if (proximos.length > 0) {
-          const r = proximos[0];
-          const pet = lista.find((p) => p.idPet === r.idPet);
-          setLembrete({ descricao: r.descricao, dtRetorno: r.dtRetorno!, petNome: pet?.nome ?? '' });
-        } else {
-          setLembrete(null);
-        }
-      });
-    }, [usuario])
+      queryClient.invalidateQueries({ queryKey: ['pets', usuario.idUsuario] });
+      queryClient.invalidateQueries({ queryKey: ['alertas'] });
+      queryClient.invalidateQueries({ queryKey: ['historico'] });
+    }, [usuario, queryClient])
   );
 
   const primeiroNome = usuario?.nome.split(' ')[0] ?? 'Usuário';

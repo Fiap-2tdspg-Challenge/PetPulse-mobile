@@ -13,16 +13,16 @@ import * as Location from "expo-location"
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps"
 import { Ionicons } from "@expo/vector-icons"
 import { cores } from "../../theme/cores"
-import { getPets } from "../../services/storage"
+import { usePets } from "../../hooks/usePets"
 import { useAuth } from "../../context/AuthContext"
-import { Pet } from "../../types/pet"
 import { Footer } from "../../components/Footer"
 
-const GOOGLE_KEY = "AIzaSyCatanT-4IDSa4eEOGZGrb6eH1r9CIyEyo"
+const GOOGLE_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? ""
 
 export const LocalizaPet = () => {
     const { usuario } = useAuth()
-    const [pet, setPet] = useState<Pet | null>(null)
+    const { data: pets } = usePets(usuario?.idUsuario)
+    const pet = pets?.[0] ?? null
     const [location, setLocation] = useState<Location.LocationObject | null>(null)
     const [address, setAddress] = useState<string | null>(null)
     const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
@@ -81,11 +81,6 @@ export const LocalizaPet = () => {
             setLoading(false)
         }
     }
-
-    useEffect(() => {
-        if (!usuario) return
-        getPets(usuario.idUsuario).then((pets) => setPet(pets[0] ?? null))
-    }, [usuario])
 
     useEffect(() => {
         startTracking()

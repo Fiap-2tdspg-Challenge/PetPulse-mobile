@@ -2,6 +2,16 @@
   "expo": {
     "name": "PetPulse-mobile",
     "slug": "PetPulse-mobile",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "plugins": [
+      "expo-status-bar",
+      "expo-font"
+    ],
+    "android": {
+      "package": "com.petpulsemobile"
+    },
+    "ios": {
+      "bundleIdentifier": "com.petpulsemobile"
+    }
   }
 }
