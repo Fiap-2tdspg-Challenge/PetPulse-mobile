@@ -8,6 +8,7 @@ import { cores } from "../theme/cores";
 const ITENS = [
   { label: "home",         icone: "home",          lib: "Ionicons",              rota: "Home"        },
   { label: "Localiza pet", icone: "location-sharp", lib: "Ionicons",              rota: "LocalizaPet" },
+  { label: "Coleira",      icone: "pulse",          lib: "Ionicons",              rota: "Coleira"     },
   { label: "Historico",    icone: "clipboard-list", lib: "MaterialCommunityIcons", rota: "HistoricoClinico"   },
   { label: "Meu pet",      icone: "paw",            lib: "MaterialCommunityIcons", rota: "MeuPet"      },
   { label: "Perfil",       icone: "person",         lib: "Ionicons",              rota: "Perfil"      },
@@ -31,9 +32,9 @@ export const Footer = () => {
             activeOpacity={0.7}
           >
             {item.lib === "Ionicons" ? (
-              <Ionicons name={item.icone as any} size={24} color={cor} />
+              <Ionicons name={item.icone as any} size={22} color={cor} />
             ) : (
-              <MaterialCommunityIcons name={item.icone as any} size={24} color={cor} />
+              <MaterialCommunityIcons name={item.icone as any} size={22} color={cor} />
             )}
             <Text style={[styles.label, { color: cor }]}>{item.label}</Text>
           </TouchableOpacity>
@@ -48,9 +49,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: cores.roxoMedio,
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     borderRadius: 20,
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     marginBottom: 16,
     justifyContent: "space-around",
     alignItems: "center",
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   label: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "500",
   },
 });

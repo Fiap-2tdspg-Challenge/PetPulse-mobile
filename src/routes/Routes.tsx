@@ -12,6 +12,7 @@ import { ActivityIndicator, View } from "react-native";
 import { Login } from "../screens/login/Login";
 import { Cadastro } from "../screens/cadastro/Cadastro";
 import { EditaPet } from "../screens/editaPet/EditaPet";
+import { Coleira } from "../screens/coleira/coleira";
 
 export const Routes = () => {
 
@@ -38,6 +39,7 @@ if (carregando) {
           <Stack.Screen name="CadastraPet" component={CadastraPet} />
           <Stack.Screen name="EditaPet" component={EditaPet} />
           <Stack.Screen name="EditaPerfil" component={EditaPerfil} />
+          <Stack.Screen name="Coleira" component={Coleira} />
         </>
       ) : (
         <>
