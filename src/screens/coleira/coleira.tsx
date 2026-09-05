@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   RefreshControl,
@@ -16,7 +16,7 @@ import { cores } from '../../theme/cores';
 import { Footer } from '../../components/Footer';
 import { Sparkline } from '../../components/Sparkline';
 import { useAuth } from '../../context/AuthContext';
-import { getPets } from '../../services/storage';
+import { usePets } from '../../hooks/usePets';
 import { COLEIRA_API_URL } from '../../services/coleiraApi';
 import { useColeiraLive } from '../../hooks/useColeiraLive';
 import { Pet } from '../../types/pet';
@@ -110,20 +110,11 @@ export const Coleira = () => {
   const route = useRoute();
   const { usuario } = useAuth();
   const petParam = (route.params as { pet: Pet } | undefined)?.pet;
+  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.idUsuario : undefined);
+  const pet = petParam ?? pets?.[0] ?? null;
+  const carregandoPet = !petParam && carregandoPets;
 
-  const [pet, setPet] = useState<Pet | null>(petParam ?? null);
-  const [carregandoPet, setCarregandoPet] = useState(!petParam);
-
-  useEffect(() => {
-    if (!petParam && usuario) {
-      getPets(usuario.idUsuario).then((lista) => {
-        setPet(lista[0] ?? null);
-        setCarregandoPet(false);
-      });
-    }
-  }, [petParam, usuario]);
-
-  const { dados, historico, carregando, erro, atualizadoEm, recarregar } = useColeiraLive();
+  const { dados, historico, carregando, atualizando, erro, atualizadoEm, recarregar } = useColeiraLive();
 
   const estadoCfg = ESTADO_CONFIG[dados?.estado ?? 'OK'];
 
@@ -145,7 +136,7 @@ export const Coleira = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={carregando} onRefresh={recarregar} tintColor={cores.roxoMedio} />}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} tintColor={cores.roxoMedio} />}
       >
         {/* PET + STATUS */}
         <View style={styles.topo}>

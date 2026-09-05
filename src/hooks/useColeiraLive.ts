@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ColeiraApiError, getLeituraColeira } from '../services/coleiraApi';
 import { LeituraColeira } from '../types/coleiraLive';
 
@@ -9,6 +10,7 @@ export interface ColeiraLiveState {
   dados: LeituraColeira | null;
   historico: LeituraColeira[];
   carregando: boolean;
+  atualizando: boolean;
   erro: string | null;
   atualizadoEm: Date | null;
   recarregar: () => void;
@@ -16,42 +18,42 @@ export interface ColeiraLiveState {
 
 /**
  * Faz polling em GET /api/dados da coleira a cada 3s (mesmo ritmo do
- * dashboard HTML servido pelo próprio ESP32) e mantém uma janela das
- * últimas leituras para alimentar os mini-gráficos da tela.
+ * dashboard HTML servido pelo próprio ESP32) via TanStack Query, e mantém
+ * uma janela das últimas leituras para alimentar os mini-gráficos da tela.
  */
 export function useColeiraLive(): ColeiraLiveState {
-  const [dados, setDados] = useState<LeituraColeira | null>(null);
-  const [historico, setHistorico] = useState<LeituraColeira[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-  const [atualizadoEm, setAtualizadoEm] = useState<Date | null>(null);
-  const montadoRef = useRef(true);
+  const query = useQuery({
+    queryKey: ['coleira', 'leitura'],
+    queryFn: ({ signal }) => getLeituraColeira(signal),
+    refetchInterval: INTERVALO_MS,
+    refetchIntervalInBackground: true,
+    // A coleira pode estar offline; melhor reportar o erro no próximo poll
+    // de 3s do que ficar tentando de novo dentro do mesmo ciclo.
+    retry: false,
+  });
 
-  const buscar = useCallback(async () => {
-    try {
-      const leitura = await getLeituraColeira();
-      if (!montadoRef.current) return;
-      setDados(leitura);
-      setHistorico((atual) => [...atual, leitura].slice(-MAX_PONTOS));
-      setErro(null);
-      setAtualizadoEm(new Date());
-    } catch (e) {
-      if (!montadoRef.current) return;
-      setErro(e instanceof ColeiraApiError ? e.message : 'Erro inesperado ao buscar dados da coleira.');
-    } finally {
-      if (montadoRef.current) setCarregando(false);
-    }
-  }, []);
+  const [historico, setHistorico] = useState<LeituraColeira[]>([]);
 
   useEffect(() => {
-    montadoRef.current = true;
-    buscar();
-    const id = setInterval(buscar, INTERVALO_MS);
-    return () => {
-      montadoRef.current = false;
-      clearInterval(id);
-    };
-  }, [buscar]);
+    if (!query.data) return;
+    setHistorico((atual) => [...atual, query.data].slice(-MAX_PONTOS));
+  }, [query.data]);
 
-  return { dados, historico, carregando, erro, atualizadoEm, recarregar: buscar };
+  const erro = query.error
+    ? query.error instanceof ColeiraApiError
+      ? query.error.message
+      : 'Erro inesperado ao buscar dados da coleira.'
+    : null;
+
+  return {
+    dados: query.data ?? null,
+    historico,
+    carregando: query.isLoading,
+    atualizando: query.isFetching,
+    erro,
+    atualizadoEm: query.dataUpdatedAt ? new Date(query.dataUpdatedAt) : null,
+    recarregar: () => {
+      void query.refetch();
+    },
+  };
 }
