@@ -17,14 +17,18 @@ import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { useCreatePet } from "../../hooks/usePets";
+import { useFindOrCreateSpecies, useFindOrCreateBreed } from "../../hooks/useCatalogoPet";
 import { useAuth } from "../../context/AuthContext";
-import { Porte, Sexo } from "../../types/pet";
+import { Sexo } from "../../types/pet";
+import { PORTES } from "../../constants/catalogoPet";
 
 export const CadastraPet = () => {
   const navigation = useNavigation();
   const { usuario } = useAuth();
+  const resolverEspecie = useFindOrCreateSpecies();
+  const resolverRaca = useFindOrCreateBreed();
   const criarPet = useCreatePet();
-  const carregando = criarPet.isPending;
+  const carregando = resolverEspecie.isPending || resolverRaca.isPending || criarPet.isPending;
 
   const [form, setForm] = useState({
     nome: "",
@@ -35,7 +39,7 @@ export const CadastraPet = () => {
   });
 
   const [sexo, setSexo] = useState<Sexo>("MACHO");
-  const [porte, setPorte] = useState<Porte>("MEDIO");
+  const [porteId, setPorteId] = useState<number>(PORTES[1].id);
   const [castrado, setCastrado] = useState(false);
 
   const [erros, setErros] = useState<Partial<Record<keyof typeof form, string>>>({});
@@ -75,22 +79,27 @@ export const CadastraPet = () => {
 
   const handleCadastrar = async () => {
     if (!validar()) return;
-    if (!usuario) {
-      Alert.alert("Erro", "Usuário não autenticado.");
+    if (!usuario?.tutorId) {
+      Alert.alert(
+        "Erro",
+        "Sua conta ainda não está sincronizada com o servidor. Verifique se a API está no ar e tente cadastrar a conta novamente."
+      );
       return;
     }
 
     try {
+      const especie = await resolverEspecie.mutateAsync(form.especie.trim());
+      const raca = await resolverRaca.mutateAsync({ speciesId: especie.id, nome: form.raca.trim() });
       await criarPet.mutateAsync({
-        idUsuario: usuario.idUsuario,
+        tutorId: usuario.tutorId,
         nome: form.nome.trim(),
-        especie: form.especie.trim(),
-        raca: form.raca.trim(),
         dtNascimento: dataParaISO(form.dtNascimento),
         peso: parseFloat(form.peso.replace(",", ".")),
         sexo,
         castrado,
-        porte,
+        especieId: especie.id,
+        racaId: raca.id,
+        porteId,
       });
       Alert.alert("Sucesso", "Pet cadastrado com sucesso!", [
         { text: "OK", onPress: () => navigation.goBack() },
@@ -233,13 +242,9 @@ export const CadastraPet = () => {
             {/* Porte */}
             <ToggleGroup
               label="Porte"
-              options={[
-                { label: "Pequeno", value: "PEQUENO" },
-                { label: "Médio", value: "MEDIO" },
-                { label: "Grande", value: "GRANDE" },
-              ]}
-              value={porte}
-              onChange={setPorte}
+              options={PORTES.map((p) => ({ label: p.nome, value: String(p.id) }))}
+              value={String(porteId)}
+              onChange={(v) => setPorteId(Number(v))}
             />
 
             {/* Castrado */}

@@ -110,7 +110,7 @@ export const Coleira = () => {
   const route = useRoute();
   const { usuario } = useAuth();
   const petParam = (route.params as { pet: Pet } | undefined)?.pet;
-  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.idUsuario : undefined);
+  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.tutorId : undefined);
   const pet = petParam ?? pets?.[0] ?? null;
   const carregandoPet = !petParam && carregandoPets;
 

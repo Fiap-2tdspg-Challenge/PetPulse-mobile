@@ -13,11 +13,13 @@ import { Login } from "../screens/login/Login";
 import { Cadastro } from "../screens/cadastro/Cadastro";
 import { EditaPet } from "../screens/editaPet/EditaPet";
 import { Coleira } from "../screens/coleira/coleira";
+import { CadastraHistorico } from "../screens/cadastraHistorico/CadastraHistorico";
+import { PainelVeterinario } from "../screens/painelVeterinario/PainelVeterinario";
 
 export const Routes = () => {
 
 const Stack = createNativeStackNavigator();
-const { usuario, carregando } = useAuth();
+const { usuario, veterinario, carregando } = useAuth();
 
 if (carregando) {
     return (
@@ -35,12 +37,15 @@ if (carregando) {
           <Stack.Screen name="Perfil" component={Perfil} />
           <Stack.Screen name="MeuPet" component={PerfilPet} />
           <Stack.Screen name="HistoricoClinico" component={HistoricoClinico} />
+          <Stack.Screen name="CadastraHistorico" component={CadastraHistorico} />
           <Stack.Screen name="LocalizaPet" component={LocalizaPet} />
           <Stack.Screen name="CadastraPet" component={CadastraPet} />
           <Stack.Screen name="EditaPet" component={EditaPet} />
           <Stack.Screen name="EditaPerfil" component={EditaPerfil} />
           <Stack.Screen name="Coleira" component={Coleira} />
         </>
+      ) : veterinario ? (
+        <Stack.Screen name="PainelVeterinario" component={PainelVeterinario} />
       ) : (
         <>
           <Stack.Screen name="Login" component={Login} />

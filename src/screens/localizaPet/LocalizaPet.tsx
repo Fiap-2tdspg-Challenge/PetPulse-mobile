@@ -21,7 +21,7 @@ const GOOGLE_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? ""
 
 export const LocalizaPet = () => {
     const { usuario } = useAuth()
-    const { data: pets } = usePets(usuario?.idUsuario)
+    const { data: pets } = usePets(usuario?.tutorId)
     const pet = pets?.[0] ?? null
     const [location, setLocation] = useState<Location.LocationObject | null>(null)
     const [address, setAddress] = useState<string | null>(null)

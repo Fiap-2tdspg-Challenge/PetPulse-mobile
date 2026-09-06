@@ -17,7 +17,9 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { useUpdatePet } from "../../hooks/usePets";
-import { Pet, Porte, Sexo } from "../../types/pet";
+import { useFindOrCreateSpecies, useFindOrCreateBreed } from "../../hooks/useCatalogoPet";
+import { Pet, Sexo } from "../../types/pet";
+import { PORTES } from "../../constants/catalogoPet";
 
 function isoParaDisplay(iso: string): string {
   const [ano, mes, dia] = iso.split("-");
@@ -34,8 +36,10 @@ export const EditaPet = () => {
   const route = useRoute();
   const pet = (route.params as { pet: Pet }).pet;
 
+  const resolverEspecie = useFindOrCreateSpecies();
+  const resolverRaca = useFindOrCreateBreed();
   const atualizarPet = useUpdatePet();
-  const carregando = atualizarPet.isPending;
+  const carregando = resolverEspecie.isPending || resolverRaca.isPending || atualizarPet.isPending;
 
   const [form, setForm] = useState({
     nome: pet.nome,
@@ -46,7 +50,7 @@ export const EditaPet = () => {
   });
 
   const [sexo, setSexo] = useState<Sexo>(pet.sexo);
-  const [porte, setPorte] = useState<Porte>(pet.porte);
+  const [porteId, setPorteId] = useState<number>(pet.porteId ?? PORTES[1].id);
   const [castrado, setCastrado] = useState(pet.castrado);
   const [erros, setErros] = useState<Partial<Record<keyof typeof form, string>>>({});
 
@@ -82,18 +86,20 @@ export const EditaPet = () => {
   const handleSalvar = async () => {
     if (!validar()) return;
     try {
-      const petAtualizado: Pet = {
-        ...pet,
+      const especie = await resolverEspecie.mutateAsync(form.especie.trim());
+      const raca = await resolverRaca.mutateAsync({ speciesId: especie.id, nome: form.raca.trim() });
+      const petAtualizado = await atualizarPet.mutateAsync({
+        idPet: pet.idPet,
+        tutorId: pet.idUsuario,
         nome: form.nome.trim(),
-        especie: form.especie.trim(),
-        raca: form.raca.trim(),
         dtNascimento: displayParaISO(form.dtNascimento),
         peso: parseFloat(form.peso.replace(",", ".")),
         sexo,
         castrado,
-        porte,
-      };
-      await atualizarPet.mutateAsync(petAtualizado);
+        especieId: especie.id,
+        racaId: raca.id,
+        porteId,
+      });
       Alert.alert("Sucesso", "Pet atualizado com sucesso!", [
         { text: "OK", onPress: () => navigation.navigate("MeuPet" as never, { pet: petAtualizado } as never) },
       ]);
@@ -227,13 +233,9 @@ export const EditaPet = () => {
 
             <ToggleGroup
               label="Porte"
-              options={[
-                { label: "Pequeno", value: "PEQUENO" },
-                { label: "Médio", value: "MEDIO" },
-                { label: "Grande", value: "GRANDE" },
-              ]}
-              value={porte}
-              onChange={setPorte}
+              options={PORTES.map((p) => ({ label: p.nome, value: String(p.id) }))}
+              value={String(porteId)}
+              onChange={(v) => setPorteId(Number(v))}
             />
 
             <View style={styles.toggleGroup}>

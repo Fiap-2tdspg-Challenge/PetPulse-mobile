@@ -17,10 +17,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
-import { saveUsuario, getUsuarioPorEmail } from "../../services/storage";
+import { saveUsuario, getUsuarioPorEmail, updateUsuario } from "../../services/storage";
+import { useCreateTutor } from "../../hooks/useTutor";
 
 export const Cadastro = () => {
   const navigation = useNavigation();
+  const criarTutor = useCreateTutor();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
@@ -66,7 +68,9 @@ export const Cadastro = () => {
   const handleCadastrar = async () => {
     if (!validar()) return;
 
-    const { nome, cpf, email, telefone, senha, endereco } = form;
+    const { nome, cpf, telefone, endereco } = form;
+    const email = form.email.trim();
+    const senha = form.senha.trim();
     setCarregando(true);
     try {
       const emailExistente = await getUsuarioPorEmail(email);
@@ -75,7 +79,16 @@ export const Cadastro = () => {
         return;
       }
 
-      await saveUsuario({ nome, cpf, email, telefone, senha, endereco });
+      const novoUsuario = await saveUsuario({ nome, cpf, email, telefone, senha, endereco });
+
+      try {
+        const tutor = await criarTutor.mutateAsync({ name: nome, cpf, email, password: senha });
+        await updateUsuario({ ...novoUsuario, tutorId: tutor.id });
+      } catch {
+        // API pode estar fora do ar agora; a conta local segue criada mesmo assim.
+        // Pets/Histórico ficam vazios até o tutor ser sincronizado (usePets(tutorId)).
+      }
+
       Alert.alert('Sucesso', 'Conta criada com sucesso!', [
         { text: 'OK', onPress: () => navigation.navigate('Login' as never) },
       ]);

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import {
     ActivityIndicator,
+    Alert,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -14,9 +15,9 @@ import { useNavigation, useRoute } from "@react-navigation/native"
 import { cores } from "../../theme/cores"
 import { useAuth } from "../../context/AuthContext"
 import { usePets } from "../../hooks/usePets"
-import { useHistorico } from "../../hooks/useHistorico"
+import { useDeleteHistorico, useHistorico } from "../../hooks/useHistorico"
 import { Pet } from "../../types/pet"
-import { TipoRegistro } from "../../types/historicoClinico"
+import { HistoricoClinico as HistoricoClinicoType, TipoRegistro } from "../../types/historicoClinico"
 import { Footer } from "../../components/Footer"
 
 const CATEGORIAS: Array<{
@@ -26,12 +27,12 @@ const CATEGORIAS: Array<{
     cor: string
     corFundo: string
 }> = [
-    { tipo: "VACINA",    label: "Vacinas",      icone: "fitness",       cor: "#2563EB", corFundo: "#EFF6FF" },
-    { tipo: "MEDICACAO", label: "Medicamentos",  icone: "medkit",        cor: "#EA580C", corFundo: "#FFF7ED" },
-    { tipo: "EXAME",     label: "Exames",        icone: "document-text", cor: cores.roxoMedio, corFundo: cores.roxoFundo },
-    { tipo: "CONSULTA",  label: "Consultas",     icone: "calendar",      cor: cores.verde, corFundo: "#ECFEFF" },
-    { tipo: "CIRURGIA",  label: "Cirurgias",     icone: "cut",           cor: cores.erro, corFundo: "#FEF2F2" },
-    { tipo: "OUTRO",     label: "Outros",        icone: "ellipsis-horizontal-circle", cor: cores.cinzaEscuro, corFundo: cores.cinzaClaro },
+    { tipo: "VACINA",     label: "Vacinas",      icone: "fitness",       cor: "#2563EB", corFundo: "#EFF6FF" },
+    { tipo: "CONSULTA",   label: "Consultas",    icone: "calendar",      cor: cores.verde, corFundo: "#ECFEFF" },
+    { tipo: "EXAME",      label: "Exames",       icone: "document-text", cor: cores.roxoMedio, corFundo: cores.roxoFundo },
+    { tipo: "MEDICAMENTO",label: "Medicamentos", icone: "medkit",        cor: "#EA580C", corFundo: "#FFF7ED" },
+    { tipo: "DOENCA",     label: "Doenças",      icone: "bandage",       cor: cores.erro, corFundo: "#FEF2F2" },
+    { tipo: "OBSERVACAO", label: "Observações",  icone: "ellipsis-horizontal-circle", cor: cores.cinzaEscuro, corFundo: cores.cinzaClaro },
 ]
 
 function calcularIdade(dtNascimento: string): string {
@@ -60,7 +61,7 @@ export const HistoricoClinico = () => {
     const categoriaInicial = (route.params as { categoriaInicial?: TipoRegistro } | undefined)?.categoriaInicial
     const categoriaInicialAbertaRef = useRef(false)
 
-    const { data: pets = [], isLoading: carregandoPets } = usePets(usuario?.idUsuario)
+    const { data: pets = [], isLoading: carregandoPets } = usePets(usuario?.tutorId)
     const [petSelecionado, setPetSelecionado] = useState<Pet | null>(null)
     const [categoriaAberta, setCategoriaAberta] = useState<Categoria | null>(null)
 
@@ -92,6 +93,8 @@ export const HistoricoClinico = () => {
 
     const carregando = categoriaAberta ? carregandoHistorico : carregandoPets
 
+    const excluirHistorico = useDeleteHistorico()
+
     const abrirCategoria = (cat: Categoria) => {
         if (!petSelecionado) return
         setCategoriaAberta(cat)
@@ -99,6 +102,44 @@ export const HistoricoClinico = () => {
 
     const voltarMenu = () => {
         setCategoriaAberta(null)
+    }
+
+    const irParaNovoRegistro = () => {
+        if (!petSelecionado || !categoriaAberta) return
+        navigation.navigate("CadastraHistorico" as never, {
+            idPet: petSelecionado.idPet,
+            tipoRegistro: categoriaAberta.tipo,
+        } as never)
+    }
+
+    const irParaEditarRegistro = (item: HistoricoClinicoType) => {
+        if (!petSelecionado || !categoriaAberta) return
+        navigation.navigate("CadastraHistorico" as never, {
+            idPet: petSelecionado.idPet,
+            tipoRegistro: categoriaAberta.tipo,
+            historico: item,
+        } as never)
+    }
+
+    const handleExcluirRegistro = (idHistorico: number) => {
+        Alert.alert(
+            "Excluir registro",
+            "Tem certeza que deseja excluir este registro do histórico? Essa ação não pode ser desfeita.",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await excluirHistorico.mutateAsync(idHistorico)
+                        } catch {
+                            Alert.alert("Erro", "Não foi possível excluir o registro. Tente novamente.")
+                        }
+                    },
+                },
+            ]
+        )
     }
 
     /* ── TELA DE DETALHE ── */
@@ -112,7 +153,9 @@ export const HistoricoClinico = () => {
                         <Ionicons name="arrow-back" size={22} color={cores.branco} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitulo}>{categoriaAberta.label}</Text>
-                    <View style={{ width: 36 }} />
+                    <TouchableOpacity style={styles.voltarBtn} onPress={irParaNovoRegistro}>
+                        <Ionicons name="add" size={22} color={cores.branco} />
+                    </TouchableOpacity>
                 </View>
 
                 {/* card do pet no topo */}
@@ -144,13 +187,17 @@ export const HistoricoClinico = () => {
                         </View>
                     ) : (
                         registros.map((item, idx) => (
-                            <View
+                            <TouchableOpacity
                                 key={item.idHistorico}
                                 style={[styles.itemRow, idx < registros.length - 1 && styles.itemRowBorder]}
+                                activeOpacity={0.7}
+                                onPress={() => irParaEditarRegistro(item)}
                             >
                                 <View style={styles.itemBody}>
                                     <Text style={styles.itemDescricao}>{item.descricao}</Text>
-                                    <Text style={styles.itemProfissional}>{item.profissionalClinica}</Text>
+                                    {item.profissionalClinica ? (
+                                        <Text style={styles.itemProfissional}>{item.profissionalClinica}</Text>
+                                    ) : null}
                                     {item.dtRetorno && (
                                         <View style={styles.retornoRow}>
                                             <Ionicons name="calendar-outline" size={12} color={cores.verde} />
@@ -164,10 +211,16 @@ export const HistoricoClinico = () => {
                                     )}
                                 </View>
                                 <View style={styles.itemDireita}>
+                                    <TouchableOpacity
+                                        onPress={() => handleExcluirRegistro(item.idHistorico)}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Ionicons name="trash-outline" size={16} color={cores.erro} />
+                                    </TouchableOpacity>
                                     <Text style={styles.itemData}>{formatarData(item.dtRegistro)}</Text>
                                     <Ionicons name="chevron-forward" size={16} color={cores.cinzaMedio} />
                                 </View>
-                            </View>
+                            </TouchableOpacity>
                         ))
                     )}
                 </ScrollView>

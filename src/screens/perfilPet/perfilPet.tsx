@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,7 +16,7 @@ import { cores } from "../../theme/cores";
 import { Footer } from "../../components/Footer";
 import { Pet } from "../../types/pet";
 import { useAuth } from "../../context/AuthContext";
-import { usePets } from "../../hooks/usePets";
+import { usePets, useDeletePet } from "../../hooks/usePets";
 
 const PORTE_LABEL: Record<string, string> = {
   PEQUENO: "Pequeno",
@@ -26,15 +27,6 @@ const PORTE_LABEL: Record<string, string> = {
 const SEXO_LABEL: Record<string, string> = {
   MACHO: "Macho",
   FEMEA: "Fêmea",
-};
-
-const TIPO_ICONE: Record<string, string> = {
-  VACINA: "shield-checkmark",
-  CONSULTA: "medkit",
-  EXAME: "document-text",
-  MEDICACAO: "fitness",
-  CIRURGIA: "cut",
-  OUTRO: "ellipsis-horizontal-circle",
 };
 
 // Função para calcular idade a partir da data de nascimento, ira apenas conter no app para visualização
@@ -61,9 +53,33 @@ export const PerfilPet = () => {
   const route = useRoute();
   const { usuario } = useAuth();
   const petParam = (route.params as { pet: Pet } | undefined)?.pet;
-  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.idUsuario : undefined);
+  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.tutorId : undefined);
   const pet = petParam ?? pets?.[0] ?? null;
   const carregando = !petParam && carregandoPets;
+  const excluirPet = useDeletePet();
+
+  const handleExcluir = () => {
+    if (!pet) return;
+    Alert.alert(
+      "Excluir pet",
+      `Tem certeza que deseja excluir ${pet.nome}? Essa ação não pode ser desfeita.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await excluirPet.mutateAsync(pet.idPet);
+              navigation.goBack();
+            } catch {
+              Alert.alert("Erro", "Não foi possível excluir o pet. Tente novamente.");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   if (carregando) {
     return (
@@ -174,6 +190,19 @@ export const PerfilPet = () => {
         >
           <Ionicons name="create-outline" size={20} color={cores.roxoMedio} />
           <Text style={styles.editarBtnTexto}>Editar informações do pet</Text>
+        </TouchableOpacity>
+
+        {/* EXCLUIR PET */}
+        <TouchableOpacity
+          style={styles.excluirBtn}
+          activeOpacity={0.85}
+          onPress={handleExcluir}
+          disabled={excluirPet.isPending}
+        >
+          <Ionicons name="trash-outline" size={20} color={cores.erro} />
+          <Text style={styles.excluirBtnTexto}>
+            {excluirPet.isPending ? "Excluindo..." : "Excluir pet"}
+          </Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -313,5 +342,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: cores.roxoMedio,
+  },
+  excluirBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: cores.branco,
+    borderWidth: 1,
+    borderColor: cores.erro,
+  },
+  excluirBtnTexto: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: cores.erro,
   },
 });

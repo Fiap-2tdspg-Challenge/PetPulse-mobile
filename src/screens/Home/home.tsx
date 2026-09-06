@@ -20,17 +20,16 @@ import { Footer } from '../../components/Footer';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 const NIVEL_CONFIG: Record<string, { cor: string; corFundo: string; icone: string }> = {
-  BAIXO:   { cor: cores.sucesso, corFundo: '#ECFDF5', icone: 'information-circle' },
-  MEDIO:   { cor: '#F59E0B',     corFundo: '#FFFBEB', icone: 'warning'            },
-  ALTO:    { cor: cores.erro,    corFundo: '#FEF2F2', icone: 'alert-circle'       },
-  CRITICO: { cor: '#991B1B',     corFundo: '#FEE2E2', icone: 'alert-circle'       },
+  BAIXO: { cor: cores.sucesso, corFundo: '#ECFDF5', icone: 'information-circle' },
+  MEDIO: { cor: '#F59E0B',     corFundo: '#FFFBEB', icone: 'warning'            },
+  ALTO:  { cor: cores.erro,    corFundo: '#FEF2F2', icone: 'alert-circle'       },
 };
 
 const ACOES = [
-  { id: '1', label: 'Vacinas',    icone: 'medical'       as const, rota: 'HistoricoClinico', params: { categoriaInicial: 'VACINA'    } },
-  { id: '2', label: 'Medicações', icone: 'medkit'        as const, rota: 'HistoricoClinico', params: { categoriaInicial: 'MEDICACAO' } },
-  { id: '3', label: 'Exames',     icone: 'document-text' as const, rota: 'HistoricoClinico', params: { categoriaInicial: 'EXAME'     } },
-  { id: '4', label: 'Localizar',  icone: 'location'      as const, rota: 'LocalizaPet',      params: undefined                         },
+  { id: '1', label: 'Vacinas',    icone: 'medical'       as const, rota: 'HistoricoClinico', params: { categoriaInicial: 'VACINA'     } },
+  { id: '2', label: 'Medicações', icone: 'medkit'        as const, rota: 'HistoricoClinico', params: { categoriaInicial: 'MEDICAMENTO' } },
+  { id: '3', label: 'Exames',     icone: 'document-text' as const, rota: 'HistoricoClinico', params: { categoriaInicial: 'EXAME'      } },
+  { id: '4', label: 'Localizar',  icone: 'location'      as const, rota: 'LocalizaPet',      params: undefined                          },
 ];
 
 function formatarData(iso: string): string {
@@ -56,7 +55,7 @@ export const Home = () => {
   const { usuario, logout } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: pets = [] } = usePets(usuario?.idUsuario);
+  const { data: pets = [] } = usePets(usuario?.tutorId);
   const idsPets = useMemo(() => pets.map((p) => p.idPet), [pets]);
   const { data: alertas = [] } = useAlertasPendentes(idsPets);
   const { data: historicos } = useHistoricosDeVariosPets(idsPets);
@@ -65,7 +64,7 @@ export const Home = () => {
   useFocusEffect(
     useCallback(() => {
       if (!usuario) return;
-      queryClient.invalidateQueries({ queryKey: ['pets', usuario.idUsuario] });
+      queryClient.invalidateQueries({ queryKey: ['pets', usuario.tutorId] });
       queryClient.invalidateQueries({ queryKey: ['alertas'] });
       queryClient.invalidateQueries({ queryKey: ['historico'] });
     }, [usuario, queryClient])
