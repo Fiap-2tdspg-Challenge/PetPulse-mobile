@@ -1,10 +1,11 @@
+// Alinhado com o enum RecordType da API (PetPulse-Api).
 export type TipoRegistro =
   | 'VACINA'
   | 'CONSULTA'
-  | 'EXAME'
-  | 'MEDICACAO'
-  | 'CIRURGIA'
-  | 'OUTRO';
+  | 'DOENCA'
+  | 'MEDICAMENTO'
+  | 'OBSERVACAO'
+  | 'EXAME';
 
 export interface HistoricoClinico {
   idHistorico: number;
@@ -14,5 +15,14 @@ export interface HistoricoClinico {
   dtRegistro: string;
   dtRetorno: string | null;
   profissionalClinica: string;
+  observacoes: string | null;
+}
+
+/** Dados de formulário para criar/editar um registro de histórico clínico via a API. */
+export interface HistoricoFormInput {
+  idPet: number;
+  tipoRegistro: TipoRegistro;
+  descricao: string;
+  dtRetorno: string | null;
   observacoes: string | null;
 }

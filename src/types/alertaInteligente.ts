@@ -1,12 +1,13 @@
-export type TipoAlerta = 'SAUDE' | 'ATIVIDADE' | 'VACINA' | 'MEDICACAO' | 'OUTRO';
-export type NivelRisco = 'BAIXO' | 'MEDIO' | 'ALTO' | 'CRITICO';
-export type OrigemAlerta = 'IOT' | 'SISTEMA' | 'MANUAL';
-export type StatusAlerta = 'PENDENTE' | 'LIDO' | 'RESOLVIDO';
+// Alinhado com os enums da API (PetPulse-Api): AlertRiskLevel, AlertOrigin, AlertStatus.
+// tipoAlerta vem de uma tabela de referência livre (AlertType) na API, sem união fechada.
+export type NivelRisco = 'BAIXO' | 'MEDIO' | 'ALTO';
+export type OrigemAlerta = 'HISTORICO_CLINICO' | 'DISPOSITIVO_IOT' | 'SISTEMA' | 'USUARIO';
+export type StatusAlerta = 'ABERTO' | 'VISUALIZADO' | 'RESOLVIDO';
 
 export interface AlertaInteligente {
   idAlerta: number;
   idPet: number;
-  tipoAlerta: TipoAlerta;
+  tipoAlerta: string;
   nivelRisco: NivelRisco;
   origemAlerta: OrigemAlerta;
   mensagem: string;

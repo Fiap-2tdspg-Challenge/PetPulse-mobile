@@ -7,4 +7,6 @@ export interface Usuario {
   telefone: string;
   endereco: string;
   dtCadastro: string;
+  /** Id do Tutor correspondente na API Java (PetPulse-Api), quando já sincronizado. */
+  tutorId?: number;
 }
