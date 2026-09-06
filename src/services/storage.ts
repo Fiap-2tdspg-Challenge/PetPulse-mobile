@@ -1,30 +1,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Usuario } from '../types/usuario';
-import { Pet } from '../types/pet';
-import { HistoricoClinico } from '../types/historicoClinico';
-import { AlertaInteligente } from '../types/alertaInteligente';
-import { mockUsuario } from '../mocks/usuario';
-import { mockPets } from '../mocks/pet';
-import { mockHistorico } from '../mocks/historicoClinico';
-import { mockAlertas } from '../mocks/alertaInteligente';
+import { Veterinario } from '../types/veterinario';
+import { mockVeterinarios } from '../mocks/veterinario';
+
+// Pets, Histórico Clínico e Alertas Inteligentes vêm da API real (ver
+// src/hooks/usePets.ts, useHistorico.ts, useAlertas.ts). Este arquivo cuida
+// só da sessão local: Tutor (login/cadastro, sem endpoint de autenticação na
+// API ainda) e Veterinário (login local temporário, ver AuthContext.tsx).
 
 const KEYS = {
   USUARIOS: '@petpulse:usuarios',
-  PETS: '@petpulse:pets',
-  HISTORICO: '@petpulse:historico_v2',
-  ALERTAS: '@petpulse:alertas',
+  VETERINARIOS: '@petpulse:veterinarios',
 };
 
-// ── USUÁRIOS ─────────────────────────────────────────────────────────────────
+// ── USUÁRIOS (Tutor) ─────────────────────────────────────────────────────────
 
 export async function getUsuarios(): Promise<Usuario[]> {
   const raw = await AsyncStorage.getItem(KEYS.USUARIOS);
-  if (!raw) {
-    // Semeie com o mock na primeira execução
-    await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify([mockUsuario]));
-    return [mockUsuario];
-  }
-  return JSON.parse(raw) as Usuario[];
+  return raw ? (JSON.parse(raw) as Usuario[]) : [];
 }
 
 export async function saveUsuario(
@@ -46,39 +39,6 @@ export async function getUsuarioPorEmail(email: string): Promise<Usuario | undef
   return usuarios.find((u) => u.email.toLowerCase() === email.toLowerCase());
 }
 
-// ── PETS ─────────────────────────────────────────────────────────────────────
-
-export async function getPets(idUsuario?: number): Promise<Pet[]> {
-  const raw = await AsyncStorage.getItem(KEYS.PETS);
-  if (!raw) {
-    // Semeie com os mocks na primeira execução
-    await AsyncStorage.setItem(KEYS.PETS, JSON.stringify(mockPets));
-    return idUsuario ? mockPets.filter((p) => p.idUsuario === idUsuario) : mockPets;
-  }
-  const pets = JSON.parse(raw) as Pet[];
-  return idUsuario ? pets.filter((p) => p.idUsuario === idUsuario) : pets;
-}
-
-export async function savePet(
-  dados: Omit<Pet, 'idPet' | 'dtCadastro'>
-): Promise<Pet> {
-  const pets = await getPets();
-  const novoId = pets.length > 0 ? Math.max(...pets.map((p) => p.idPet)) + 1 : 1;
-  const novoPet: Pet = {
-    ...dados,
-    idPet: novoId,
-    dtCadastro: new Date().toISOString().split('T')[0],
-  };
-  await AsyncStorage.setItem(KEYS.PETS, JSON.stringify([...pets, novoPet]));
-  return novoPet;
-}
-
-export async function updatePet(petAtualizado: Pet): Promise<void> {
-  const pets = await getPets();
-  const atualizados = pets.map((p) => (p.idPet === petAtualizado.idPet ? petAtualizado : p));
-  await AsyncStorage.setItem(KEYS.PETS, JSON.stringify(atualizados));
-}
-
 export async function updateUsuario(usuarioAtualizado: Usuario): Promise<void> {
   const usuarios = await getUsuarios();
   const atualizados = usuarios.map((u) =>
@@ -87,56 +47,24 @@ export async function updateUsuario(usuarioAtualizado: Usuario): Promise<void> {
   await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify(atualizados));
 }
 
-// ── HISTÓRICO CLÍNICO ─────────────────────────────────────────────────────────
+// ── VETERINÁRIOS (login local, temporário até a API ganhar JWT + roles) ──────
 
-export async function getHistorico(idPet?: number): Promise<HistoricoClinico[]> {
-  const raw = await AsyncStorage.getItem(KEYS.HISTORICO);
+export async function getVeterinarios(): Promise<Veterinario[]> {
+  const raw = await AsyncStorage.getItem(KEYS.VETERINARIOS);
   if (!raw) {
-    await AsyncStorage.setItem(KEYS.HISTORICO, JSON.stringify(mockHistorico));
-    return idPet ? mockHistorico.filter((h) => h.idPet === idPet) : mockHistorico;
+    await AsyncStorage.setItem(KEYS.VETERINARIOS, JSON.stringify(mockVeterinarios));
+    return mockVeterinarios;
   }
-  const historico = JSON.parse(raw) as HistoricoClinico[];
-  return idPet ? historico.filter((h) => h.idPet === idPet) : historico;
-}
-
-export async function saveHistorico(
-  dados: Omit<HistoricoClinico, 'idHistorico'>
-): Promise<HistoricoClinico> {
-  const historico = await getHistorico();
-  const novoId = historico.length > 0 ? Math.max(...historico.map((h) => h.idHistorico)) + 1 : 1;
-  const novo: HistoricoClinico = { ...dados, idHistorico: novoId };
-  await AsyncStorage.setItem(KEYS.HISTORICO, JSON.stringify([...historico, novo]));
-  return novo;
-}
-
-// ── ALERTAS ────────────────────────────────────────────────────────────────
-
-export async function getAlertas(idsPets?: number[]): Promise<AlertaInteligente[]> {
-  const raw = await AsyncStorage.getItem(KEYS.ALERTAS);
-  if (!raw) {
-    await AsyncStorage.setItem(KEYS.ALERTAS, JSON.stringify(mockAlertas));
-    return idsPets ? mockAlertas.filter((a) => idsPets.includes(a.idPet)) : mockAlertas;
-  }
-  const alertas = JSON.parse(raw) as AlertaInteligente[];
-  return idsPets ? alertas.filter((a) => idsPets.includes(a.idPet)) : alertas;
+  return JSON.parse(raw) as Veterinario[];
 }
 
 // ── SEED (dev) ────────────────────────────────────────────────────────────────
-// Semeia apenas as chaves ainda inexistentes, para não apagar dados já
-// cadastrados pelo usuário a cada vez que o app é aberto.
+// Veterinários não têm tela de autocadastro (não é o tutor quem cria essas
+// contas), então precisam de dados de teste semeados. Tutores se cadastram
+// normalmente pela tela de Cadastro, sem necessidade de seed.
 export async function seedStorage(): Promise<void> {
-  const [usuarios, pets, historico, alertas] = await Promise.all([
-    AsyncStorage.getItem(KEYS.USUARIOS),
-    AsyncStorage.getItem(KEYS.PETS),
-    AsyncStorage.getItem(KEYS.HISTORICO),
-    AsyncStorage.getItem(KEYS.ALERTAS),
-  ]);
-
-  const pendentes: Promise<void>[] = [];
-  if (!usuarios) pendentes.push(AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify([mockUsuario])));
-  if (!pets) pendentes.push(AsyncStorage.setItem(KEYS.PETS, JSON.stringify(mockPets)));
-  if (!historico) pendentes.push(AsyncStorage.setItem(KEYS.HISTORICO, JSON.stringify(mockHistorico)));
-  if (!alertas) pendentes.push(AsyncStorage.setItem(KEYS.ALERTAS, JSON.stringify(mockAlertas)));
-
-  await Promise.all(pendentes);
+  const veterinarios = await AsyncStorage.getItem(KEYS.VETERINARIOS);
+  if (!veterinarios) {
+    await AsyncStorage.setItem(KEYS.VETERINARIOS, JSON.stringify(mockVeterinarios));
+  }
 }
