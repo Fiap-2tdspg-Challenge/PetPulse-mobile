@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         ...tutor,
         telefone: existente?.telefone ?? '',
         endereco: existente?.endereco ?? '',
+        phoneId: existente?.phoneId,
       };
       await salvarUsuarioLocal(usuarioLocal);
 

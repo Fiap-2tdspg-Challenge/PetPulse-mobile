@@ -18,11 +18,12 @@ import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { salvarUsuarioLocal } from "../../services/storage";
-import { useCreateTutor } from "../../hooks/useTutor";
+import { useCreateTutor, useCreateTutorPhone } from "../../hooks/useTutor";
 
 export const Cadastro = () => {
   const navigation = useNavigation();
   const criarTutor = useCreateTutor();
+  const criarTelefone = useCreateTutorPhone();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
@@ -76,7 +77,8 @@ export const Cadastro = () => {
       // O Tutor é criado direto na API — sem isso, login não funciona
       // (POST /tutors/login consulta o banco de verdade).
       const tutor = await criarTutor.mutateAsync({ name: nome, cpf, email, password: senha });
-      await salvarUsuarioLocal({ ...tutor, telefone, endereco });
+      const fone = await criarTelefone.mutateAsync({ tutorId: tutor.id, phoneNumber: telefone });
+      await salvarUsuarioLocal({ ...tutor, telefone, endereco, phoneId: fone.id });
 
       Alert.alert('Sucesso', 'Conta criada com sucesso!', [
         { text: 'OK', onPress: () => navigation.navigate('Login' as never) },

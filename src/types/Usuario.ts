@@ -9,4 +9,6 @@ import { TutorResponse } from './types';
 export interface Usuario extends TutorResponse {
   telefone: string;
   endereco: string;
+  /** Id do TutorPhone correspondente na API, quando já sincronizado (POST /tutor-phones). */
+  phoneId?: number;
 }

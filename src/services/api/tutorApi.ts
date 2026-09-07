@@ -18,3 +18,10 @@ export function loginTutor(request: TutorLoginRequest): Promise<TutorResponse> {
     body: JSON.stringify(request),
   });
 }
+
+export function updateTutor(id: number, request: TutorRequest): Promise<TutorResponse> {
+  return apiFetch<TutorResponse>(`/tutors/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(request),
+  });
+}

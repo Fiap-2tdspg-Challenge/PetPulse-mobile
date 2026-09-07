@@ -17,11 +17,16 @@ import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { useAuth } from "../../context/AuthContext";
+import { useUpdateTutor, useCreateTutorPhone, useUpdateTutorPhone } from "../../hooks/useTutor";
 
 export const EditaPerfil = () => {
   const navigation = useNavigation();
   const { usuario, atualizarUsuario } = useAuth();
+  const atualizarTutor = useUpdateTutor();
+  const criarTelefone = useCreateTutorPhone();
+  const atualizarTelefone = useUpdateTutorPhone();
   const [carregando, setCarregando] = useState(false);
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
 
   const [form, setForm] = useState({
     nome: usuario?.name ?? "",
@@ -29,6 +34,7 @@ export const EditaPerfil = () => {
     telefone: usuario?.telefone ?? "",
     cpf: usuario?.cpf ?? "",
     endereco: usuario?.endereco ?? "",
+    senha: "",
   });
 
   const [erros, setErros] = useState<Partial<Record<keyof typeof form, string>>>({});
@@ -64,6 +70,7 @@ export const EditaPerfil = () => {
     if (form.telefone.replace(/\D/g, "").length < 10) novosErros.telefone = "Telefone inválido.";
     if (form.cpf.replace(/\D/g, "").length !== 11) novosErros.cpf = "CPF deve ter 11 dígitos.";
     if (form.endereco.trim().length < 5) novosErros.endereco = "Endereço inválido.";
+    if (form.senha.length < 6) novosErros.senha = "Senha deve ter no mínimo 6 caracteres.";
 
     setErros(novosErros);
     return Object.keys(novosErros).length === 0;
@@ -73,19 +80,43 @@ export const EditaPerfil = () => {
     if (!validar() || !usuario) return;
     setCarregando(true);
     try {
-      await atualizarUsuario({
-        ...usuario,
-        name: form.nome.trim(),
-        email: form.email.trim(),
-        telefone: form.telefone.replace(/\D/g, ""),
-        cpf: form.cpf.replace(/\D/g, ""),
-        endereco: form.endereco.trim(),
+      const nome = form.nome.trim();
+      const email = form.email.trim();
+      const cpf = form.cpf.replace(/\D/g, "");
+      const telefone = form.telefone.replace(/\D/g, "");
+      const endereco = form.endereco.trim();
+      const senha = form.senha.trim();
+
+      // Atualiza o Tutor de verdade na API — o PUT /tutors/{id} exige senha
+      // no corpo (mesmo DTO usado na criação), por isso ela é pedida aqui
+      // pra confirmar a alteração.
+      const tutorAtualizado = await atualizarTutor.mutateAsync({
+        id: usuario.id,
+        dados: { name: nome, cpf, email, password: senha },
       });
+
+      const fone = usuario.phoneId
+        ? await atualizarTelefone.mutateAsync({
+            id: usuario.phoneId,
+            dados: { tutorId: usuario.id, phoneNumber: telefone },
+          })
+        : await criarTelefone.mutateAsync({ tutorId: usuario.id, phoneNumber: telefone });
+
+      await atualizarUsuario({
+        ...tutorAtualizado,
+        telefone,
+        endereco,
+        phoneId: fone.id,
+      });
+
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch {
-      Alert.alert("Erro", "Não foi possível atualizar o perfil. Tente novamente.");
+      Alert.alert(
+        "Não foi possível salvar",
+        "Não foi possível conectar à API. Verifique se ela está no ar e tente novamente."
+      );
     } finally {
       setCarregando(false);
     }
@@ -181,6 +212,28 @@ export const EditaPerfil = () => {
             </View>
             {erros.endereco ? <Text style={styles.erro}>{erros.endereco}</Text> : null}
 
+            {/* Senha (confirma a alteração na API) */}
+            <View style={styles.inputWrap}>
+              <Ionicons name="lock-closed-outline" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcone} />
+              <TextInput
+                style={styles.input}
+                placeholder="Senha"
+                placeholderTextColor="rgba(255,255,255,0.6)"
+                secureTextEntry={!senhaVisivel}
+                autoCapitalize="none"
+                value={form.senha}
+                onChangeText={(v) => atualizar("senha", v)}
+              />
+              <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)} style={styles.inputIconeDireita}>
+                <Ionicons
+                  name={senhaVisivel ? "eye-off-outline" : "eye-outline"}
+                  size={18}
+                  color="rgba(255,255,255,0.7)"
+                />
+              </TouchableOpacity>
+            </View>
+            {erros.senha ? <Text style={styles.erro}>{erros.senha}</Text> : null}
+
             <TouchableOpacity
               style={[styles.botao, carregando && { opacity: 0.6 }]}
               onPress={handleSalvar}
@@ -226,6 +279,7 @@ const styles = StyleSheet.create({
     height: 50,
   },
   inputIcone: { marginRight: 10 },
+  inputIconeDireita: { marginLeft: 8 },
   input: { flex: 1, fontSize: 14, color: cores.branco },
   erro: { color: "#FFD6D6", fontSize: 12, alignSelf: "flex-start", marginBottom: 8 },
   botao: {

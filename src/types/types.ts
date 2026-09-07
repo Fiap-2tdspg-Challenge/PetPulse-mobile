@@ -64,6 +64,17 @@ export interface TutorLoginRequest {
   password: string;
 }
 
+export interface TutorPhoneRequest {
+  tutorId: number;
+  phoneNumber: string;
+}
+
+export interface TutorPhoneResponse {
+  id: number;
+  tutorId: number;
+  phoneNumber: string;
+}
+
 // ── Pet ──────────────────────────────────────────────────────────────────
 
 export interface PetRequest {
