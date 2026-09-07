@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import { TutorRequest, TutorResponse } from './types';
+import { TutorLoginRequest, TutorRequest, TutorResponse } from '../../types/types';
 
 export function createTutor(request: TutorRequest): Promise<TutorResponse> {
   return apiFetch<TutorResponse>('/tutors', {
@@ -10,4 +10,11 @@ export function createTutor(request: TutorRequest): Promise<TutorResponse> {
 
 export function getTutorById(id: number): Promise<TutorResponse> {
   return apiFetch<TutorResponse>(`/tutors/${id}`);
+}
+
+export function loginTutor(request: TutorLoginRequest): Promise<TutorResponse> {
+  return apiFetch<TutorResponse>('/tutors/login', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
 }

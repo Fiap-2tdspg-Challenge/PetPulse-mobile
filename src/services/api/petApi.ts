@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import { PetRequest, PetResponse, SpringPage } from './types';
+import { PetRequest, PetResponse, SpringPage } from '../../types/types';
 
 // A API ainda não tem filtro por tutorId em GET /pets, então buscamos uma
 // página grande e filtramos no cliente (ver mappers.ts / hooks/usePets.ts).

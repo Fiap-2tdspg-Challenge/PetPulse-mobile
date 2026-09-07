@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Usuario } from '../types/usuario';
 import { Veterinario } from '../types/veterinario';
-import { getUsuarios, getVeterinarios, updateUsuario } from '../services/storage';
+import { getUsuarios, getVeterinarios, updateUsuario, sincronizarUsuarioComTutor } from '../services/storage';
+import { loginTutor } from '../services/api/tutorApi';
 
 const SESSAO_KEY = '@petpulse:sessao';
 
@@ -52,17 +53,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     carregarSessao();
   }, []);
 
+  // Login do Tutor consulta a API de verdade (POST /tutors/login) — ainda é
+  // provisório (sem hash de senha, sem token), mas já valida contra o banco
+  // em vez de comparar só localmente. A cópia local (AsyncStorage) é
+  // reconciliada depois, pra manter campos que a API não tem (telefone,
+  // endereço) e permitir restaurar a sessão sem a API no ar.
   const login = async (email: string, senha: string): Promise<boolean> => {
     const emailNormalizado = email.trim().toLowerCase();
     const senhaNormalizada = senha.trim();
-    const usuarios = await getUsuarios();
-    const u = usuarios.find(
-      (u) => u.email.trim().toLowerCase() === emailNormalizado && u.senha.trim() === senhaNormalizada
-    );
-    if (!u) return false;
-    await AsyncStorage.setItem(SESSAO_KEY, JSON.stringify({ tipo: 'TUTOR', id: u.idUsuario }));
-    setUsuario(u);
-    return true;
+    try {
+      const tutor = await loginTutor({ email: emailNormalizado, password: senhaNormalizada });
+      const usuarioLocal = await sincronizarUsuarioComTutor(tutor, senhaNormalizada);
+      await AsyncStorage.setItem(SESSAO_KEY, JSON.stringify({ tipo: 'TUTOR', id: usuarioLocal.idUsuario }));
+      setUsuario(usuarioLocal);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const loginVeterinario = async (email: string, senha: string): Promise<boolean> => {

@@ -104,6 +104,7 @@ export const Login = () => {
               placeholder="Senha"
               placeholderTextColor="rgba(255,255,255,0.6)"
               secureTextEntry={!senhaVisivel}
+              autoCapitalize="none"
               value={senha}
               onChangeText={setSenha}
             />

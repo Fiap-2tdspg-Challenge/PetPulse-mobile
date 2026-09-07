@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import { SpringPage, SmartAlertResponse } from './types';
+import { SpringPage, SmartAlertResponse } from '../../types/types';
 
 // Sem filtro por petId em GET /smart-alerts hoje: busca uma página grande
 // e filtra no cliente (ver mappers.ts / hooks/useAlertas.ts).

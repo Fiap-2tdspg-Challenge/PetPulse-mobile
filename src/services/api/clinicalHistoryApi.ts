@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import { ClinicalHistoryRequest, ClinicalHistoryResponse, SpringPage } from './types';
+import { ClinicalHistoryRequest, ClinicalHistoryResponse, SpringPage } from '../../types/types';
 
 // Sem filtro por petId em GET /clinical-histories hoje: busca uma página
 // grande e filtra no cliente (ver mappers.ts / hooks/useHistorico.ts).

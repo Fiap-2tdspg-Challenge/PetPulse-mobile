@@ -47,6 +47,44 @@ export async function updateUsuario(usuarioAtualizado: Usuario): Promise<void> {
   await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify(atualizados));
 }
 
+/**
+ * Reconcilia o Tutor retornado pelo login da API com a cópia local (que
+ * guarda campos que a API não tem, como telefone/endereço). Cria a cópia
+ * local se ainda não existir (ex: conta criada direto na API/Swagger).
+ */
+export async function sincronizarUsuarioComTutor(
+  tutor: { id: number; name: string; cpf: string; email: string },
+  senha: string
+): Promise<Usuario> {
+  const usuarios = await getUsuarios();
+  const existente =
+    usuarios.find((u) => u.tutorId === tutor.id) ??
+    usuarios.find((u) => u.email.toLowerCase() === tutor.email.toLowerCase());
+
+  if (existente) {
+    const atualizado: Usuario = {
+      ...existente,
+      nome: tutor.name,
+      cpf: tutor.cpf,
+      email: tutor.email,
+      senha,
+      tutorId: tutor.id,
+    };
+    await updateUsuario(atualizado);
+    return atualizado;
+  }
+
+  return saveUsuario({
+    nome: tutor.name,
+    cpf: tutor.cpf,
+    email: tutor.email,
+    telefone: '',
+    endereco: '',
+    senha,
+    tutorId: tutor.id,
+  });
+}
+
 // ── VETERINÁRIOS (login local, temporário até a API ganhar JWT + roles) ──────
 
 export async function getVeterinarios(): Promise<Veterinario[]> {

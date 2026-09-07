@@ -8,7 +8,7 @@ import {
   PetRequest,
   PetResponse,
   SmartAlertResponse,
-} from './types';
+} from '../../types/types';
 
 // ── Sexo ─────────────────────────────────────────────────────────────────
 

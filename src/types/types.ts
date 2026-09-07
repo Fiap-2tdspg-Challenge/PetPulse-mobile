@@ -59,6 +59,11 @@ export interface TutorResponse {
   createdAt: string;
 }
 
+export interface TutorLoginRequest {
+  email: string;
+  password: string;
+}
+
 // ── Pet ──────────────────────────────────────────────────────────────────
 
 export interface PetRequest {

@@ -74,26 +74,29 @@ export const Cadastro = () => {
     setCarregando(true);
     try {
       const emailExistente = await getUsuarioPorEmail(email);
-      if (emailExistente) {
+      if (emailExistente?.tutorId) {
         setErros((prev) => ({ ...prev, email: 'Já existe uma conta com esse e-mail.' }));
         return;
       }
 
-      const novoUsuario = await saveUsuario({ nome, cpf, email, telefone, senha, endereco });
+      // Se já existe um registro local sem tutorId, é uma conta que ficou
+      // "pendente" de uma tentativa anterior sem conexão com a API — reusa
+      // em vez de criar outra, e tenta sincronizar de novo.
+      const usuarioBase = emailExistente ?? await saveUsuario({ nome, cpf, email, telefone, senha, endereco });
 
-      try {
-        const tutor = await criarTutor.mutateAsync({ name: nome, cpf, email, password: senha });
-        await updateUsuario({ ...novoUsuario, tutorId: tutor.id });
-      } catch {
-        // API pode estar fora do ar agora; a conta local segue criada mesmo assim.
-        // Pets/Histórico ficam vazios até o tutor ser sincronizado (usePets(tutorId)).
-      }
+      // Login agora consulta a API de verdade (POST /tutors/login), então a
+      // conta só funciona depois que o Tutor existir lá.
+      const tutor = await criarTutor.mutateAsync({ name: nome, cpf, email, password: senha });
+      await updateUsuario({ ...usuarioBase, nome, cpf, telefone, endereco, senha, tutorId: tutor.id });
 
       Alert.alert('Sucesso', 'Conta criada com sucesso!', [
         { text: 'OK', onPress: () => navigation.navigate('Login' as never) },
       ]);
     } catch {
-      Alert.alert('Erro', 'Não foi possível criar a conta. Tente novamente.');
+      Alert.alert(
+        'Não foi possível concluir o cadastro',
+        'Não foi possível conectar à API. Verifique se ela está no ar (./mvnw spring-boot:run) e tente cadastrar novamente — o login só funciona depois que a conta for sincronizada.'
+      );
     } finally {
       setCarregando(false);
     }
@@ -189,6 +192,7 @@ export const Cadastro = () => {
                 placeholder="Senha"
                 placeholderTextColor="rgba(255,255,255,0.6)"
                 secureTextEntry={!senhaVisivel}
+                autoCapitalize="none"
                 value={form.senha}
                 onChangeText={(v) => atualizar('senha', v)}
               />

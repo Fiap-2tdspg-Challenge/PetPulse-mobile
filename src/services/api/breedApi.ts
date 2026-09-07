@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import { BreedRequest, BreedResponse } from './types';
+import { BreedRequest, BreedResponse } from '../../types/types';
 
 /** Busca a raça pelo nome (dentro da espécie informada) ou cria uma nova, caso ainda não exista. */
 export function findOrCreateBreed(request: BreedRequest): Promise<BreedResponse> {
