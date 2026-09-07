@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Usuario } from '../types/usuario';
-import { Veterinario } from '../types/veterinario';
+import { Usuario } from '../types/Usuario';
+import { Veterinario } from '../types/Veterinario';
 import { mockVeterinarios } from '../mocks/veterinario';
 
 // Pets, Histórico Clínico e Alertas Inteligentes vêm da API real (ver
@@ -14,75 +14,23 @@ const KEYS = {
 };
 
 // ── USUÁRIOS (Tutor) ─────────────────────────────────────────────────────────
+// O Tutor sempre existe primeiro na API (POST /tutors) — não há mais criação
+// "só local". Este arquivo guarda apenas uma cópia por id (o id do Tutor na
+// API) com os campos que a API não tem: telefone, endereço.
 
 export async function getUsuarios(): Promise<Usuario[]> {
   const raw = await AsyncStorage.getItem(KEYS.USUARIOS);
   return raw ? (JSON.parse(raw) as Usuario[]) : [];
 }
 
-export async function saveUsuario(
-  dados: Omit<Usuario, 'idUsuario' | 'dtCadastro'>
-): Promise<Usuario> {
+/** Grava (cria ou atualiza) a cópia local de um Tutor, indexada pelo id da API. */
+export async function salvarUsuarioLocal(usuario: Usuario): Promise<void> {
   const usuarios = await getUsuarios();
-  const novoId = usuarios.length > 0 ? Math.max(...usuarios.map((u) => u.idUsuario)) + 1 : 1;
-  const novoUsuario: Usuario = {
-    ...dados,
-    idUsuario: novoId,
-    dtCadastro: new Date().toISOString().split('T')[0],
-  };
-  await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify([...usuarios, novoUsuario]));
-  return novoUsuario;
-}
-
-export async function getUsuarioPorEmail(email: string): Promise<Usuario | undefined> {
-  const usuarios = await getUsuarios();
-  return usuarios.find((u) => u.email.toLowerCase() === email.toLowerCase());
-}
-
-export async function updateUsuario(usuarioAtualizado: Usuario): Promise<void> {
-  const usuarios = await getUsuarios();
-  const atualizados = usuarios.map((u) =>
-    u.idUsuario === usuarioAtualizado.idUsuario ? usuarioAtualizado : u
-  );
+  const existe = usuarios.some((u) => u.id === usuario.id);
+  const atualizados = existe
+    ? usuarios.map((u) => (u.id === usuario.id ? usuario : u))
+    : [...usuarios, usuario];
   await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify(atualizados));
-}
-
-/**
- * Reconcilia o Tutor retornado pelo login da API com a cópia local (que
- * guarda campos que a API não tem, como telefone/endereço). Cria a cópia
- * local se ainda não existir (ex: conta criada direto na API/Swagger).
- */
-export async function sincronizarUsuarioComTutor(
-  tutor: { id: number; name: string; cpf: string; email: string },
-  senha: string
-): Promise<Usuario> {
-  const usuarios = await getUsuarios();
-  const existente =
-    usuarios.find((u) => u.tutorId === tutor.id) ??
-    usuarios.find((u) => u.email.toLowerCase() === tutor.email.toLowerCase());
-
-  if (existente) {
-    const atualizado: Usuario = {
-      ...existente,
-      nome: tutor.name,
-      cpf: tutor.cpf,
-      email: tutor.email,
-      senha,
-      tutorId: tutor.id,
-    };
-    await updateUsuario(atualizado);
-    return atualizado;
-  }
-
-  return saveUsuario({
-    nome: tutor.name,
-    cpf: tutor.cpf,
-    email: tutor.email,
-    telefone: '',
-    endereco: '',
-    senha,
-    tutorId: tutor.id,
-  });
 }
 
 // ── VETERINÁRIOS (login local, temporário até a API ganhar JWT + roles) ──────

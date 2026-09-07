@@ -14,19 +14,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { Footer } from "../../components/Footer";
-import { Pet } from "../../types/pet";
+import { PetResponse } from "../../types/types";
 import { useAuth } from "../../context/AuthContext";
 import { usePets, useDeletePet } from "../../hooks/usePets";
 
-const PORTE_LABEL: Record<string, string> = {
-  PEQUENO: "Pequeno",
-  MEDIO: "Médio",
-  GRANDE: "Grande",
-};
-
 const SEXO_LABEL: Record<string, string> = {
-  MACHO: "Macho",
-  FEMEA: "Fêmea",
+  M: "Macho",
+  F: "Fêmea",
 };
 
 // Função para calcular idade a partir da data de nascimento, ira apenas conter no app para visualização
@@ -44,7 +38,7 @@ function calcularIdade(dtNascimento: string): string {
 
 // formatador de dada para DD/MM/AAAA
 function formatarData(iso: string): string {
-  const [ano, mes, dia] = iso.split("-");
+  const [ano, mes, dia] = iso.slice(0, 10).split("-");
   return `${dia}/${mes}/${ano}`;
 }
 
@@ -52,8 +46,8 @@ export const PerfilPet = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { usuario } = useAuth();
-  const petParam = (route.params as { pet: Pet } | undefined)?.pet;
-  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.tutorId : undefined);
+  const petParam = (route.params as { pet: PetResponse } | undefined)?.pet;
+  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.id : undefined);
   const pet = petParam ?? pets?.[0] ?? null;
   const carregando = !petParam && carregandoPets;
   const excluirPet = useDeletePet();
@@ -62,7 +56,7 @@ export const PerfilPet = () => {
     if (!pet) return;
     Alert.alert(
       "Excluir pet",
-      `Tem certeza que deseja excluir ${pet.nome}? Essa ação não pode ser desfeita.`,
+      `Tem certeza que deseja excluir ${pet.name}? Essa ação não pode ser desfeita.`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -70,7 +64,7 @@ export const PerfilPet = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              await excluirPet.mutateAsync(pet.idPet);
+              await excluirPet.mutateAsync(pet.id);
               navigation.goBack();
             } catch {
               Alert.alert("Erro", "Não foi possível excluir o pet. Tente novamente.");
@@ -132,24 +126,24 @@ export const PerfilPet = () => {
           <View style={styles.avatar}>
             <Ionicons name="paw" size={48} color={cores.branco} />
           </View>
-          <Text style={styles.petNome}>{pet.nome}</Text>
-          <Text style={styles.petSubtitulo}>{pet.especie} · {pet.raca}</Text>
+          <Text style={styles.petNome}>{pet.name}</Text>
+          <Text style={styles.petSubtitulo}>{pet.speciesName} · {pet.breedName}</Text>
         </View>
 
         {/* INFORMAÇÕES */}
         <View style={styles.card}>
           <Text style={styles.cardTitulo}>Informações</Text>
-          <InfoItem icone="calendar-outline"     label="Nascimento" valor={formatarData(pet.dtNascimento)} />
-          <InfoItem icone="time-outline"          label="Idade"      valor={calcularIdade(pet.dtNascimento)} />
-          <InfoItem icone="barbell-outline"       label="Peso"       valor={`${pet.peso} kg`} />
-          <InfoItem icone="resize-outline"        label="Porte"      valor={PORTE_LABEL[pet.porte] ?? pet.porte} />
-          <InfoItem icone="male-female-outline"   label="Sexo"       valor={SEXO_LABEL[pet.sexo] ?? pet.sexo} />
+          <InfoItem icone="calendar-outline"     label="Nascimento" valor={formatarData(pet.birthDate)} />
+          <InfoItem icone="time-outline"          label="Idade"      valor={calcularIdade(pet.birthDate)} />
+          <InfoItem icone="barbell-outline"       label="Peso"       valor={`${pet.weight} kg`} />
+          <InfoItem icone="resize-outline"        label="Porte"      valor={pet.petSizeDescription} />
+          <InfoItem icone="male-female-outline"   label="Sexo"       valor={SEXO_LABEL[pet.sex] ?? pet.sex} />
           <InfoItem
-            icone={pet.castrado ? "checkmark-circle-outline" : "close-circle-outline"}
+            icone={pet.neutered ? "checkmark-circle-outline" : "close-circle-outline"}
             label="Castrado"
-            valor={pet.castrado ? "Sim" : "Não"}
+            valor={pet.neutered ? "Sim" : "Não"}
           />
-          <InfoItem icone="today-outline" label="Cadastrado em" valor={formatarData(pet.dtCadastro)} />
+          <InfoItem icone="today-outline" label="Cadastrado em" valor={formatarData(pet.createdAt)} />
         </View>
 
         {/* AÇÕES */}

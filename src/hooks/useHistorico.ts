@@ -5,27 +5,26 @@ import {
   getAllClinicalHistories,
   updateClinicalHistory,
 } from '../services/api/clinicalHistoryApi';
-import { historicoDaApi, historicoParaApi } from '../services/api/mappers';
-import { HistoricoFormInput } from '../types/historicoClinico';
+import { ClinicalHistoryRequest } from '../types/types';
 
-export function useHistorico(idPet?: number, options?: { enabled?: boolean }) {
+export function useHistorico(petId?: number, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['historico', idPet],
+    queryKey: ['historico', petId],
     queryFn: async () => {
       const historicos = await getAllClinicalHistories();
-      return historicos.map(historicoDaApi).filter((h) => h.idPet === idPet);
+      return historicos.filter((h) => h.petId === petId);
     },
-    enabled: !!idPet && (options?.enabled ?? true),
+    enabled: !!petId && (options?.enabled ?? true),
   });
 }
 
 export function useHistoricosDeVariosPets(idsPets: number[]) {
   return useQueries({
-    queries: idsPets.map((idPet) => ({
-      queryKey: ['historico', idPet],
+    queries: idsPets.map((petId) => ({
+      queryKey: ['historico', petId],
       queryFn: async () => {
         const historicos = await getAllClinicalHistories();
-        return historicos.map(historicoDaApi).filter((h) => h.idPet === idPet);
+        return historicos.filter((h) => h.petId === petId);
       },
     })),
     combine: (results) => ({
@@ -38,8 +37,7 @@ export function useHistoricosDeVariosPets(idsPets: number[]) {
 export function useCreateHistorico() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dados: HistoricoFormInput) =>
-      createClinicalHistory(historicoParaApi(dados)).then(historicoDaApi),
+    mutationFn: (dados: ClinicalHistoryRequest) => createClinicalHistory(dados),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['historico'] });
     },
@@ -49,8 +47,8 @@ export function useCreateHistorico() {
 export function useUpdateHistorico() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ idHistorico, ...dados }: HistoricoFormInput & { idHistorico: number }) =>
-      updateClinicalHistory(idHistorico, historicoParaApi(dados)).then(historicoDaApi),
+    mutationFn: ({ id, ...dados }: ClinicalHistoryRequest & { id: number }) =>
+      updateClinicalHistory(id, dados),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['historico'] });
     },
@@ -60,7 +58,7 @@ export function useUpdateHistorico() {
 export function useDeleteHistorico() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (idHistorico: number) => deleteClinicalHistory(idHistorico),
+    mutationFn: (id: number) => deleteClinicalHistory(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['historico'] });
     },

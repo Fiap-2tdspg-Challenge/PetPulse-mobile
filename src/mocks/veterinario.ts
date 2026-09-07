@@ -1,8 +1,9 @@
-import { Veterinario } from '../types/veterinario';
+import { Veterinario } from '../types/Veterinario';
 
 // Mesmas credenciais semeadas em PetPulseDB/03_CARGA.sql (PRC_CARGA_PROFISSIONAL),
 // para que, quando a API ganhar autenticação real (JWT + roles), esses mesmos
 // logins de teste continuem fazendo sentido.
+// manteremos o mock até que a API de veterinário esteja implementada.
 export const mockVeterinarios: Veterinario[] = [
   {
     idVeterinario: 1,

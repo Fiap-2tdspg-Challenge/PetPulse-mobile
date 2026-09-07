@@ -1,14 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAllPets, createPet, updatePet, deletePet } from '../services/api/petApi';
-import { petDaApi, petParaApi } from '../services/api/mappers';
-import { PetFormInput } from '../types/pet';
+import { PetRequest } from '../types/types';
 
 export function usePets(tutorId?: number) {
   return useQuery({
     queryKey: ['pets', tutorId],
     queryFn: async () => {
       const pets = await getAllPets();
-      return pets.map(petDaApi).filter((pet) => pet.idUsuario === tutorId);
+      return pets.filter((pet) => pet.tutorId === tutorId);
     },
     enabled: !!tutorId,
   });
@@ -17,7 +16,7 @@ export function usePets(tutorId?: number) {
 export function useCreatePet() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dados: PetFormInput) => createPet(petParaApi(dados)).then(petDaApi),
+    mutationFn: (dados: PetRequest) => createPet(dados),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] });
     },
@@ -27,8 +26,7 @@ export function useCreatePet() {
 export function useUpdatePet() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ idPet, ...dados }: PetFormInput & { idPet: number }) =>
-      updatePet(idPet, petParaApi(dados)).then(petDaApi),
+    mutationFn: ({ id, ...dados }: PetRequest & { id: number }) => updatePet(id, dados),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] });
     },
@@ -38,7 +36,7 @@ export function useUpdatePet() {
 export function useDeletePet() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (idPet: number) => deletePet(idPet),
+    mutationFn: (id: number) => deletePet(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] });
     },

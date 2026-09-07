@@ -1,4 +1,4 @@
-import { LeituraColeira } from '../types/coleiraLive';
+import { LeituraColeira } from '../types/coleiraLivre';
 
 // ─────────────────────────────────────────────────────────────────────────
 // URL base da coleira IoT (ESP32 simulado no Wokwi).

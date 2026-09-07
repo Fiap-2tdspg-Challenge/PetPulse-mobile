@@ -19,7 +19,7 @@ import { PawBackground } from "../../components/PawBackground";
 import { useCreatePet } from "../../hooks/usePets";
 import { useFindOrCreateSpecies, useFindOrCreateBreed } from "../../hooks/useCatalogoPet";
 import { useAuth } from "../../context/AuthContext";
-import { Sexo } from "../../types/pet";
+import { ApiSex } from "../../types/types";
 import { PORTES } from "../../constants/catalogoPet";
 
 export const CadastraPet = () => {
@@ -38,7 +38,7 @@ export const CadastraPet = () => {
     peso: "",
   });
 
-  const [sexo, setSexo] = useState<Sexo>("MACHO");
+  const [sexo, setSexo] = useState<ApiSex>("M");
   const [porteId, setPorteId] = useState<number>(PORTES[1].id);
   const [castrado, setCastrado] = useState(false);
 
@@ -79,27 +79,21 @@ export const CadastraPet = () => {
 
   const handleCadastrar = async () => {
     if (!validar()) return;
-    if (!usuario?.tutorId) {
-      Alert.alert(
-        "Erro",
-        "Sua conta ainda não está sincronizada com o servidor. Verifique se a API está no ar e tente cadastrar a conta novamente."
-      );
-      return;
-    }
+    if (!usuario) return;
 
     try {
       const especie = await resolverEspecie.mutateAsync(form.especie.trim());
       const raca = await resolverRaca.mutateAsync({ speciesId: especie.id, nome: form.raca.trim() });
       await criarPet.mutateAsync({
-        tutorId: usuario.tutorId,
-        nome: form.nome.trim(),
-        dtNascimento: dataParaISO(form.dtNascimento),
-        peso: parseFloat(form.peso.replace(",", ".")),
-        sexo,
-        castrado,
-        especieId: especie.id,
-        racaId: raca.id,
-        porteId,
+        tutorId: usuario.id,
+        name: form.nome.trim(),
+        birthDate: dataParaISO(form.dtNascimento),
+        weight: parseFloat(form.peso.replace(",", ".")),
+        sex: sexo,
+        neutered: castrado,
+        speciesId: especie.id,
+        breedId: raca.id,
+        petSizeId: porteId,
       });
       Alert.alert("Sucesso", "Pet cadastrado com sucesso!", [
         { text: "OK", onPress: () => navigation.goBack() },
@@ -232,8 +226,8 @@ export const CadastraPet = () => {
             <ToggleGroup
               label="Sexo"
               options={[
-                { label: "Macho", value: "MACHO" },
-                { label: "Fêmea", value: "FEMEA" },
+                { label: "Macho", value: "M" },
+                { label: "Fêmea", value: "F" },
               ]}
               value={sexo}
               onChange={setSexo}

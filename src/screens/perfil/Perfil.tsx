@@ -15,7 +15,7 @@ import { Footer } from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
 
 function formatarData(iso: string): string {
-  const [ano, mes, dia] = iso.split("-");
+  const [ano, mes, dia] = iso.slice(0, 10).split("-");
   return `${dia}/${mes}/${ano}`;
 }
 
@@ -58,7 +58,7 @@ export const Perfil = () => {
 
   if (!usuario) return null;
 
-  const iniciais = usuario.nome
+  const iniciais = usuario.name
     .split(" ")
     .slice(0, 2)
     .map((p) => p[0].toUpperCase())
@@ -89,19 +89,19 @@ export const Perfil = () => {
           <View style={styles.avatar}>
             <Text style={styles.avatarIniciais}>{iniciais}</Text>
           </View>
-          <Text style={styles.nome}>{usuario.nome}</Text>
+          <Text style={styles.nome}>{usuario.name}</Text>
           <Text style={styles.email}>{usuario.email}</Text>
         </View>
 
         {/* INFORMAÇÕES */}
         <View style={styles.card}>
           <Text style={styles.cardTitulo}>Informações pessoais</Text>
-          <InfoItem icone="person-outline"    label="Nome completo" valor={usuario.nome} />
+          <InfoItem icone="person-outline"    label="Nome completo" valor={usuario.name} />
           <InfoItem icone="mail-outline"      label="E-mail"        valor={usuario.email} />
           <InfoItem icone="call-outline"      label="Telefone"      valor={formatarTelefone(usuario.telefone)} />
           <InfoItem icone="card-outline"      label="CPF"           valor={formatarCPF(usuario.cpf)} />
           <InfoItem icone="location-outline"  label="Endereço"      valor={usuario.endereco} />
-          <InfoItem icone="today-outline"     label="Membro desde"  valor={formatarData(usuario.dtCadastro)} />
+          <InfoItem icone="today-outline"     label="Membro desde"  valor={formatarData(usuario.createdAt)} />
         </View>
 
         {/* SAIR */}

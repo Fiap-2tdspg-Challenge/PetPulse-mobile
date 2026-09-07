@@ -19,8 +19,8 @@ import { useAuth } from '../../context/AuthContext';
 import { usePets } from '../../hooks/usePets';
 import { COLEIRA_API_URL } from '../../services/coleiraApi';
 import { useColeiraLive } from '../../hooks/useColeiraLive';
-import { Pet } from '../../types/pet';
-import { EstadoColeira } from '../../types/coleiraLive';
+import { PetResponse } from '../../types/types';
+import { EstadoColeira } from '../../types/coleiraLivre';
 
 const ESTADO_CONFIG: Record<
   EstadoColeira,
@@ -109,8 +109,8 @@ export const Coleira = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { usuario } = useAuth();
-  const petParam = (route.params as { pet: Pet } | undefined)?.pet;
-  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.tutorId : undefined);
+  const petParam = (route.params as { pet: PetResponse } | undefined)?.pet;
+  const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.id : undefined);
   const pet = petParam ?? pets?.[0] ?? null;
   const carregandoPet = !petParam && carregandoPets;
 
@@ -145,7 +145,7 @@ export const Coleira = () => {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.petNome}>
-              {carregandoPet ? 'Carregando…' : pet?.nome ?? 'Pet não encontrado'}
+              {carregandoPet ? 'Carregando…' : pet?.name ?? 'Pet não encontrado'}
             </Text>
             <Text style={styles.petSub}>
               {dados ? `Dispositivo ${dados.idDispositivo}` : `Buscando em ${COLEIRA_API_URL}…`}

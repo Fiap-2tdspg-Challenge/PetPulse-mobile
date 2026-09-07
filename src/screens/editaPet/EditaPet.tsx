@@ -18,7 +18,7 @@ import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { useUpdatePet } from "../../hooks/usePets";
 import { useFindOrCreateSpecies, useFindOrCreateBreed } from "../../hooks/useCatalogoPet";
-import { Pet, Sexo } from "../../types/pet";
+import { ApiSex, PetResponse } from "../../types/types";
 import { PORTES } from "../../constants/catalogoPet";
 
 function isoParaDisplay(iso: string): string {
@@ -34,7 +34,7 @@ function displayParaISO(display: string): string {
 export const EditaPet = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const pet = (route.params as { pet: Pet }).pet;
+  const pet = (route.params as { pet: PetResponse }).pet;
 
   const resolverEspecie = useFindOrCreateSpecies();
   const resolverRaca = useFindOrCreateBreed();
@@ -42,16 +42,16 @@ export const EditaPet = () => {
   const carregando = resolverEspecie.isPending || resolverRaca.isPending || atualizarPet.isPending;
 
   const [form, setForm] = useState({
-    nome: pet.nome,
-    especie: pet.especie,
-    raca: pet.raca,
-    dtNascimento: isoParaDisplay(pet.dtNascimento),
-    peso: String(pet.peso),
+    nome: pet.name,
+    especie: pet.speciesName,
+    raca: pet.breedName,
+    dtNascimento: isoParaDisplay(pet.birthDate),
+    peso: String(pet.weight),
   });
 
-  const [sexo, setSexo] = useState<Sexo>(pet.sexo);
-  const [porteId, setPorteId] = useState<number>(pet.porteId ?? PORTES[1].id);
-  const [castrado, setCastrado] = useState(pet.castrado);
+  const [sexo, setSexo] = useState<ApiSex>(pet.sex);
+  const [porteId, setPorteId] = useState<number>(pet.petSizeId ?? PORTES[1].id);
+  const [castrado, setCastrado] = useState(pet.neutered);
   const [erros, setErros] = useState<Partial<Record<keyof typeof form, string>>>({});
 
   const atualizar = (campo: keyof typeof form, valor: string) => {
@@ -89,16 +89,16 @@ export const EditaPet = () => {
       const especie = await resolverEspecie.mutateAsync(form.especie.trim());
       const raca = await resolverRaca.mutateAsync({ speciesId: especie.id, nome: form.raca.trim() });
       const petAtualizado = await atualizarPet.mutateAsync({
-        idPet: pet.idPet,
-        tutorId: pet.idUsuario,
-        nome: form.nome.trim(),
-        dtNascimento: displayParaISO(form.dtNascimento),
-        peso: parseFloat(form.peso.replace(",", ".")),
-        sexo,
-        castrado,
-        especieId: especie.id,
-        racaId: raca.id,
-        porteId,
+        id: pet.id,
+        tutorId: pet.tutorId,
+        name: form.nome.trim(),
+        birthDate: displayParaISO(form.dtNascimento),
+        weight: parseFloat(form.peso.replace(",", ".")),
+        sex: sexo,
+        neutered: castrado,
+        speciesId: especie.id,
+        breedId: raca.id,
+        petSizeId: porteId,
       });
       Alert.alert("Sucesso", "Pet atualizado com sucesso!", [
         { text: "OK", onPress: () => navigation.navigate("MeuPet" as never, { pet: petAtualizado } as never) },
@@ -224,8 +224,8 @@ export const EditaPet = () => {
             <ToggleGroup
               label="Sexo"
               options={[
-                { label: "Macho", value: "MACHO" },
-                { label: "Fêmea", value: "FEMEA" },
+                { label: "Macho", value: "M" },
+                { label: "Fêmea", value: "F" },
               ]}
               value={sexo}
               onChange={setSexo}

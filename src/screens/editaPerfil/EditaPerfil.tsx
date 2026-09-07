@@ -24,7 +24,7 @@ export const EditaPerfil = () => {
   const [carregando, setCarregando] = useState(false);
 
   const [form, setForm] = useState({
-    nome: usuario?.nome ?? "",
+    nome: usuario?.name ?? "",
     email: usuario?.email ?? "",
     telefone: usuario?.telefone ?? "",
     cpf: usuario?.cpf ?? "",
@@ -75,7 +75,7 @@ export const EditaPerfil = () => {
     try {
       await atualizarUsuario({
         ...usuario,
-        nome: form.nome.trim(),
+        name: form.nome.trim(),
         email: form.email.trim(),
         telefone: form.telefone.replace(/\D/g, ""),
         cpf: form.cpf.replace(/\D/g, ""),

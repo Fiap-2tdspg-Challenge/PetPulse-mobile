@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Usuario } from '../types/usuario';
-import { Veterinario } from '../types/veterinario';
-import { getUsuarios, getVeterinarios, updateUsuario, sincronizarUsuarioComTutor } from '../services/storage';
+import { Usuario } from '../types/Usuario';
+import { Veterinario } from '../types/Veterinario';
+import { getUsuarios, getVeterinarios, salvarUsuarioLocal } from '../services/storage';
 import { loginTutor } from '../services/api/tutorApi';
 
 const SESSAO_KEY = '@petpulse:sessao';
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (v) setVeterinario(v);
         } else {
           const usuarios = await getUsuarios();
-          const u = usuarios.find((u) => u.idUsuario === sessao.id);
+          const u = usuarios.find((u) => u.id === sessao.id);
           if (u) setUsuario(u);
         }
       } finally {
@@ -63,8 +63,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const senhaNormalizada = senha.trim();
     try {
       const tutor = await loginTutor({ email: emailNormalizado, password: senhaNormalizada });
-      const usuarioLocal = await sincronizarUsuarioComTutor(tutor, senhaNormalizada);
-      await AsyncStorage.setItem(SESSAO_KEY, JSON.stringify({ tipo: 'TUTOR', id: usuarioLocal.idUsuario }));
+
+      // Reconcilia com a cópia local, que guarda campos que a API não tem
+      // (telefone, endereço) — cria a cópia se ainda não existir (ex: conta
+      // criada direto na API/Swagger).
+      const usuarios = await getUsuarios();
+      const existente = usuarios.find((u) => u.id === tutor.id);
+      const usuarioLocal: Usuario = {
+        ...tutor,
+        telefone: existente?.telefone ?? '',
+        endereco: existente?.endereco ?? '',
+      };
+      await salvarUsuarioLocal(usuarioLocal);
+
+      await AsyncStorage.setItem(SESSAO_KEY, JSON.stringify({ tipo: 'TUTOR', id: usuarioLocal.id }));
       setUsuario(usuarioLocal);
       return true;
     } catch {
@@ -92,7 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const atualizarUsuario = async (dados: Usuario) => {
-    await updateUsuario(dados);
+    await salvarUsuarioLocal(dados);
     setUsuario(dados);
   };
 

@@ -21,7 +21,7 @@ const GOOGLE_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? ""
 
 export const LocalizaPet = () => {
     const { usuario } = useAuth()
-    const { data: pets } = usePets(usuario?.tutorId)
+    const { data: pets } = usePets(usuario?.id)
     const pet = pets?.[0] ?? null
     const [location, setLocation] = useState<Location.LocationObject | null>(null)
     const [address, setAddress] = useState<string | null>(null)
@@ -107,7 +107,7 @@ export const LocalizaPet = () => {
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.petName}>{pet?.nome ?? "Pet"}</Text>
+                    <Text style={styles.petName}>{pet?.name ?? "Pet"}</Text>
 
                     {/* Mapa Google */}
                     <View style={styles.mapContainer}>
@@ -146,7 +146,7 @@ export const LocalizaPet = () => {
                                         latitude: location.coords.latitude,
                                         longitude: location.coords.longitude,
                                     }}
-                                    title={pet?.nome}
+                                    title={pet?.name}
                                     description="Localização atual do pet"
                                     pinColor={cores.roxoMedio}
                                 />

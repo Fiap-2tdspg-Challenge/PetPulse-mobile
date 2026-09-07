@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
-import { saveUsuario, getUsuarioPorEmail, updateUsuario } from "../../services/storage";
+import { salvarUsuarioLocal } from "../../services/storage";
 import { useCreateTutor } from "../../hooks/useTutor";
 
 export const Cadastro = () => {
@@ -73,29 +73,18 @@ export const Cadastro = () => {
     const senha = form.senha.trim();
     setCarregando(true);
     try {
-      const emailExistente = await getUsuarioPorEmail(email);
-      if (emailExistente?.tutorId) {
-        setErros((prev) => ({ ...prev, email: 'Já existe uma conta com esse e-mail.' }));
-        return;
-      }
-
-      // Se já existe um registro local sem tutorId, é uma conta que ficou
-      // "pendente" de uma tentativa anterior sem conexão com a API — reusa
-      // em vez de criar outra, e tenta sincronizar de novo.
-      const usuarioBase = emailExistente ?? await saveUsuario({ nome, cpf, email, telefone, senha, endereco });
-
-      // Login agora consulta a API de verdade (POST /tutors/login), então a
-      // conta só funciona depois que o Tutor existir lá.
+      // O Tutor é criado direto na API — sem isso, login não funciona
+      // (POST /tutors/login consulta o banco de verdade).
       const tutor = await criarTutor.mutateAsync({ name: nome, cpf, email, password: senha });
-      await updateUsuario({ ...usuarioBase, nome, cpf, telefone, endereco, senha, tutorId: tutor.id });
+      await salvarUsuarioLocal({ ...tutor, telefone, endereco });
 
       Alert.alert('Sucesso', 'Conta criada com sucesso!', [
         { text: 'OK', onPress: () => navigation.navigate('Login' as never) },
       ]);
     } catch {
       Alert.alert(
-        'Não foi possível concluir o cadastro',
-        'Não foi possível conectar à API. Verifique se ela está no ar (./mvnw spring-boot:run) e tente cadastrar novamente — o login só funciona depois que a conta for sincronizada.'
+        'Não foi possível criar a conta',
+        'Não foi possível conectar à API (ou o e-mail/CPF já está em uso). Verifique se ela está no ar (./mvnw spring-boot:run) e tente novamente.'
       );
     } finally {
       setCarregando(false);

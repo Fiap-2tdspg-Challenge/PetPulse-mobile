@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ColeiraApiError, getLeituraColeira } from '../services/coleiraApi';
-import { LeituraColeira } from '../types/coleiraLive';
+import { LeituraColeira } from '../types/coleiraLivre';
 
 const INTERVALO_MS = 3000; // mesmo intervalo de atualização do dashboard embarcado no ESP32
 const MAX_PONTOS = 20; // mesma janela do gráfico embarcado (MAX_PONTOS em PetPulse-Iot.ino)

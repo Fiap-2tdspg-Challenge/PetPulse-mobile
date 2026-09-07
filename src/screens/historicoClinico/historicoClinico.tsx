@@ -16,12 +16,11 @@ import { cores } from "../../theme/cores"
 import { useAuth } from "../../context/AuthContext"
 import { usePets } from "../../hooks/usePets"
 import { useDeleteHistorico, useHistorico } from "../../hooks/useHistorico"
-import { Pet } from "../../types/pet"
-import { HistoricoClinico as HistoricoClinicoType, TipoRegistro } from "../../types/historicoClinico"
+import { PetResponse, ClinicalHistoryResponse, ApiRecordType } from "../../types/types"
 import { Footer } from "../../components/Footer"
 
 const CATEGORIAS: Array<{
-    tipo: TipoRegistro
+    tipo: ApiRecordType
     label: string
     icone: string
     cor: string
@@ -58,11 +57,11 @@ export const HistoricoClinico = () => {
     const navigation = useNavigation()
     const route = useRoute()
     const { usuario } = useAuth()
-    const categoriaInicial = (route.params as { categoriaInicial?: TipoRegistro } | undefined)?.categoriaInicial
+    const categoriaInicial = (route.params as { categoriaInicial?: ApiRecordType } | undefined)?.categoriaInicial
     const categoriaInicialAbertaRef = useRef(false)
 
-    const { data: pets = [], isLoading: carregandoPets } = usePets(usuario?.tutorId)
-    const [petSelecionado, setPetSelecionado] = useState<Pet | null>(null)
+    const { data: pets = [], isLoading: carregandoPets } = usePets(usuario?.id)
+    const [petSelecionado, setPetSelecionado] = useState<PetResponse | null>(null)
     const [categoriaAberta, setCategoriaAberta] = useState<Categoria | null>(null)
 
     useEffect(() => {
@@ -80,15 +79,15 @@ export const HistoricoClinico = () => {
     }, [petSelecionado])
 
     const { data: historicoPet = [], isLoading: carregandoHistorico } = useHistorico(
-        petSelecionado?.idPet,
+        petSelecionado?.id,
         { enabled: !!categoriaAberta }
     )
 
     const registros = useMemo(() => {
         if (!categoriaAberta) return []
         return historicoPet
-            .filter((r) => r.tipoRegistro === categoriaAberta.tipo)
-            .sort((a, b) => new Date(b.dtRegistro).getTime() - new Date(a.dtRegistro).getTime())
+            .filter((r) => r.recordType === categoriaAberta.tipo)
+            .sort((a, b) => new Date(b.recordDate).getTime() - new Date(a.recordDate).getTime())
     }, [historicoPet, categoriaAberta])
 
     const carregando = categoriaAberta ? carregandoHistorico : carregandoPets
@@ -107,21 +106,21 @@ export const HistoricoClinico = () => {
     const irParaNovoRegistro = () => {
         if (!petSelecionado || !categoriaAberta) return
         navigation.navigate("CadastraHistorico" as never, {
-            idPet: petSelecionado.idPet,
+            petId: petSelecionado.id,
             tipoRegistro: categoriaAberta.tipo,
         } as never)
     }
 
-    const irParaEditarRegistro = (item: HistoricoClinicoType) => {
+    const irParaEditarRegistro = (item: ClinicalHistoryResponse) => {
         if (!petSelecionado || !categoriaAberta) return
         navigation.navigate("CadastraHistorico" as never, {
-            idPet: petSelecionado.idPet,
+            petId: petSelecionado.id,
             tipoRegistro: categoriaAberta.tipo,
             historico: item,
         } as never)
     }
 
-    const handleExcluirRegistro = (idHistorico: number) => {
+    const handleExcluirRegistro = (id: number) => {
         Alert.alert(
             "Excluir registro",
             "Tem certeza que deseja excluir este registro do histórico? Essa ação não pode ser desfeita.",
@@ -132,7 +131,7 @@ export const HistoricoClinico = () => {
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            await excluirHistorico.mutateAsync(idHistorico)
+                            await excluirHistorico.mutateAsync(id)
                         } catch {
                             Alert.alert("Erro", "Não foi possível excluir o registro. Tente novamente.")
                         }
@@ -165,9 +164,9 @@ export const HistoricoClinico = () => {
                             <Ionicons name="paw" size={20} color={cores.branco} />
                         </View>
                         <View>
-                            <Text style={styles.petCardNome}>{petSelecionado.nome}</Text>
+                            <Text style={styles.petCardNome}>{petSelecionado.name}</Text>
                             <Text style={styles.petCardSub}>
-                                {petSelecionado.especie} · {calcularIdade(petSelecionado.dtNascimento)}
+                                {petSelecionado.speciesName} · {calcularIdade(petSelecionado.birthDate)}
                             </Text>
                         </View>
                     </View>
@@ -188,36 +187,36 @@ export const HistoricoClinico = () => {
                     ) : (
                         registros.map((item, idx) => (
                             <TouchableOpacity
-                                key={item.idHistorico}
+                                key={item.id}
                                 style={[styles.itemRow, idx < registros.length - 1 && styles.itemRowBorder]}
                                 activeOpacity={0.7}
                                 onPress={() => irParaEditarRegistro(item)}
                             >
                                 <View style={styles.itemBody}>
-                                    <Text style={styles.itemDescricao}>{item.descricao}</Text>
-                                    {item.profissionalClinica ? (
-                                        <Text style={styles.itemProfissional}>{item.profissionalClinica}</Text>
+                                    <Text style={styles.itemDescricao}>{item.description}</Text>
+                                    {item.professionalName ? (
+                                        <Text style={styles.itemProfissional}>{item.professionalName}</Text>
                                     ) : null}
-                                    {item.dtRetorno && (
+                                    {item.returnDate && (
                                         <View style={styles.retornoRow}>
                                             <Ionicons name="calendar-outline" size={12} color={cores.verde} />
                                             <Text style={styles.retornoText}>
-                                                Retorno: {formatarData(item.dtRetorno)}
+                                                Retorno: {formatarData(item.returnDate)}
                                             </Text>
                                         </View>
                                     )}
-                                    {item.observacoes && (
-                                        <Text style={styles.itemObs}>{item.observacoes}</Text>
+                                    {item.observations && (
+                                        <Text style={styles.itemObs}>{item.observations}</Text>
                                     )}
                                 </View>
                                 <View style={styles.itemDireita}>
                                     <TouchableOpacity
-                                        onPress={() => handleExcluirRegistro(item.idHistorico)}
+                                        onPress={() => handleExcluirRegistro(item.id)}
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                     >
                                         <Ionicons name="trash-outline" size={16} color={cores.erro} />
                                     </TouchableOpacity>
-                                    <Text style={styles.itemData}>{formatarData(item.dtRegistro)}</Text>
+                                    <Text style={styles.itemData}>{formatarData(item.recordDate)}</Text>
                                     <Ionicons name="chevron-forward" size={16} color={cores.cinzaMedio} />
                                 </View>
                             </TouchableOpacity>
@@ -256,16 +255,16 @@ export const HistoricoClinico = () => {
                                 style={{ marginBottom: 8 }}
                             >
                                 {pets.map((p) => {
-                                    const ativo = petSelecionado.idPet === p.idPet
+                                    const ativo = petSelecionado.id === p.id
                                     return (
                                         <TouchableOpacity
-                                            key={p.idPet}
+                                            key={p.id}
                                             style={[styles.petTab, ativo && styles.petTabAtivo]}
                                             onPress={() => setPetSelecionado(p)}
                                             activeOpacity={0.7}
                                         >
                                             <Text style={[styles.petTabText, ativo && styles.petTabTextAtivo]}>
-                                                {p.nome}
+                                                {p.name}
                                             </Text>
                                         </TouchableOpacity>
                                     )
@@ -282,9 +281,9 @@ export const HistoricoClinico = () => {
                                 <Ionicons name="paw" size={22} color={cores.branco} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.petNome}>{petSelecionado.nome}</Text>
+                                <Text style={styles.petNome}>{petSelecionado.name}</Text>
                                 <Text style={styles.petSub}>
-                                    {petSelecionado.raca} · {calcularIdade(petSelecionado.dtNascimento)}
+                                    {petSelecionado.breedName} · {calcularIdade(petSelecionado.birthDate)}
                                 </Text>
                             </View>
                             <Ionicons name="chevron-forward" size={20} color={cores.branco} />

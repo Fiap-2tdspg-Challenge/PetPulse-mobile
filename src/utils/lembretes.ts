@@ -1,19 +1,18 @@
-import { HistoricoClinico } from '../types/historicoClinico';
-import { Pet } from '../types/pet';
+import { ClinicalHistoryResponse, PetResponse } from '../types/types';
 
 export type Lembrete = { descricao: string; dtRetorno: string; petNome: string };
 
-export function calcularProximoRetorno(historicos: HistoricoClinico[], pets: Pet[]): Lembrete | null {
+export function calcularProximoRetorno(historicos: ClinicalHistoryResponse[], pets: PetResponse[]): Lembrete | null {
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
 
   const proximos = historicos
-    .filter((r) => r.dtRetorno && new Date(r.dtRetorno) >= hoje)
-    .sort((a, b) => new Date(a.dtRetorno!).getTime() - new Date(b.dtRetorno!).getTime());
+    .filter((r) => r.returnDate && new Date(r.returnDate) >= hoje)
+    .sort((a, b) => new Date(a.returnDate!).getTime() - new Date(b.returnDate!).getTime());
 
   if (proximos.length === 0) return null;
 
   const r = proximos[0];
-  const pet = pets.find((p) => p.idPet === r.idPet);
-  return { descricao: r.descricao, dtRetorno: r.dtRetorno!, petNome: pet?.nome ?? '' };
+  const pet = pets.find((p) => p.id === r.petId);
+  return { descricao: r.description ?? '', dtRetorno: r.returnDate!, petNome: pet?.name ?? '' };
 }

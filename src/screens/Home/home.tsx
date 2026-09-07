@@ -55,8 +55,8 @@ export const Home = () => {
   const { usuario, logout } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: pets = [] } = usePets(usuario?.tutorId);
-  const idsPets = useMemo(() => pets.map((p) => p.idPet), [pets]);
+  const { data: pets = [] } = usePets(usuario?.id);
+  const idsPets = useMemo(() => pets.map((p) => p.id), [pets]);
   const { data: alertas = [] } = useAlertasPendentes(idsPets);
   const { data: historicos } = useHistoricosDeVariosPets(idsPets);
   const lembrete = useMemo(() => calcularProximoRetorno(historicos, pets), [historicos, pets]);
@@ -64,13 +64,13 @@ export const Home = () => {
   useFocusEffect(
     useCallback(() => {
       if (!usuario) return;
-      queryClient.invalidateQueries({ queryKey: ['pets', usuario.tutorId] });
+      queryClient.invalidateQueries({ queryKey: ['pets', usuario.id] });
       queryClient.invalidateQueries({ queryKey: ['alertas'] });
       queryClient.invalidateQueries({ queryKey: ['historico'] });
     }, [usuario, queryClient])
   );
 
-  const primeiroNome = usuario?.nome.split(' ')[0] ?? 'Usuário';
+  const primeiroNome = usuario?.name.split(' ')[0] ?? 'Usuário';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -111,11 +111,11 @@ export const Home = () => {
               <Text style={styles.semPets}>Nenhum pet cadastrado ainda.</Text>
             ) : (
               pets.map((pet) => {
-                const anoNasc = new Date(pet.dtNascimento).getFullYear();
+                const anoNasc = new Date(pet.birthDate).getFullYear();
                 const idade = new Date().getFullYear() - anoNasc;
                 return (
                   <TouchableOpacity
-                    key={pet.idPet}
+                    key={pet.id}
                     style={styles.petItem}
                     activeOpacity={0.7}
                     onPress={() => (navigation as any).navigate('MeuPet', { pet })}
@@ -124,8 +124,8 @@ export const Home = () => {
                       <Ionicons name="paw" size={22} color={cores.branco} />
                     </View>
                     <View style={styles.petInfo}>
-                      <Text style={styles.petNome}>{pet.nome}</Text>
-                      <Text style={styles.petRaca}>{pet.raca} · {idade} {idade === 1 ? 'ano' : 'anos'}</Text>
+                      <Text style={styles.petNome}>{pet.name}</Text>
+                      <Text style={styles.petRaca}>{pet.breedName} · {idade} {idade === 1 ? 'ano' : 'anos'}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={cores.branco} />
                   </TouchableOpacity>
@@ -163,16 +163,16 @@ export const Home = () => {
           <View style={styles.secao}>
             <Text style={styles.secaoTitulo}>Notificações</Text>
             {alertas.map((alerta) => {
-              const cfg = NIVEL_CONFIG[alerta.nivelRisco];
+              const cfg = NIVEL_CONFIG[alerta.riskLevel];
               return (
                 <View
-                  key={alerta.idAlerta}
+                  key={alerta.id}
                   style={[styles.cardAlerta, { backgroundColor: cfg.corFundo, borderLeftColor: cfg.cor }]}
                 >
                   <Ionicons name={cfg.icone as any} size={22} color={cfg.cor} style={{ marginRight: 10 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.alertaMensagem, { color: cfg.cor }]}>{alerta.mensagem}</Text>
-                    <Text style={styles.alertaRecomendacao}>{alerta.recomendacao}</Text>
+                    <Text style={[styles.alertaMensagem, { color: cfg.cor }]}>{alerta.message}</Text>
+                    <Text style={styles.alertaRecomendacao}>{alerta.recommendation}</Text>
                   </View>
                 </View>
               );

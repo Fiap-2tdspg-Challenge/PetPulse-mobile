@@ -17,9 +17,9 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { useCreateHistorico, useUpdateHistorico } from "../../hooks/useHistorico";
-import { HistoricoClinico, TipoRegistro } from "../../types/historicoClinico";
+import { ApiRecordType, ClinicalHistoryResponse } from "../../types/types";
 
-const CATEGORIAS: Array<{ tipo: TipoRegistro; label: string }> = [
+const CATEGORIAS: Array<{ tipo: ApiRecordType; label: string }> = [
   { tipo: "VACINA", label: "Vacina" },
   { tipo: "CONSULTA", label: "Consulta" },
   { tipo: "EXAME", label: "Exame" },
@@ -41,19 +41,19 @@ function displayParaISO(display: string): string {
 export const CadastraHistorico = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const params = route.params as { idPet: number; tipoRegistro: TipoRegistro; historico?: HistoricoClinico };
-  const { idPet, historico } = params;
+  const params = route.params as { petId: number; tipoRegistro: ApiRecordType; historico?: ClinicalHistoryResponse };
+  const { petId, historico } = params;
   const modoEdicao = !!historico;
 
   const criarHistorico = useCreateHistorico();
   const atualizarHistorico = useUpdateHistorico();
   const carregando = criarHistorico.isPending || atualizarHistorico.isPending;
 
-  const [tipoRegistro, setTipoRegistro] = useState<TipoRegistro>(historico?.tipoRegistro ?? params.tipoRegistro);
+  const [tipoRegistro, setTipoRegistro] = useState<ApiRecordType>(historico?.recordType ?? params.tipoRegistro);
   const [form, setForm] = useState({
-    descricao: historico?.descricao ?? "",
-    dtRetorno: historico?.dtRetorno ? isoParaDisplay(historico.dtRetorno) : "",
-    observacoes: historico?.observacoes ?? "",
+    descricao: historico?.description ?? "",
+    dtRetorno: historico?.returnDate ? isoParaDisplay(historico.returnDate) : "",
+    observacoes: historico?.observations ?? "",
   });
   const [erros, setErros] = useState<Partial<Record<"descricao" | "dtRetorno", string>>>({});
 
@@ -85,16 +85,17 @@ export const CadastraHistorico = () => {
     if (!validar()) return;
 
     const dados = {
-      idPet,
-      tipoRegistro,
-      descricao: form.descricao.trim(),
-      dtRetorno: form.dtRetorno ? displayParaISO(form.dtRetorno) : null,
-      observacoes: form.observacoes.trim() || null,
+      petId,
+      professionalId: null,
+      recordType: tipoRegistro,
+      description: form.descricao.trim(),
+      returnDate: form.dtRetorno ? displayParaISO(form.dtRetorno) : null,
+      observations: form.observacoes.trim() || null,
     };
 
     try {
       if (modoEdicao) {
-        await atualizarHistorico.mutateAsync({ idHistorico: historico!.idHistorico, ...dados });
+        await atualizarHistorico.mutateAsync({ id: historico!.id, ...dados });
       } else {
         await criarHistorico.mutateAsync(dados);
       }
