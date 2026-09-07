@@ -75,6 +75,59 @@ export interface TutorPhoneResponse {
   phoneNumber: string;
 }
 
+// ── State / City (catálogo, "buscar ou cadastrar") ──────────────────────────
+
+export interface StateRequest {
+  code: string;
+  name: string;
+}
+
+export interface StateResponse {
+  code: string;
+  name: string;
+}
+
+export interface CityRequest {
+  name: string;
+  stateCode: string;
+}
+
+export interface CityResponse {
+  id: number;
+  name: string;
+  stateCode: string;
+  stateName: string;
+}
+
+// ── Tutor Address ────────────────────────────────────────────────────────
+
+export interface TutorAddressRequest {
+  tutorId: number;
+  addressTypeId: number;
+  cityId: number;
+  address: string;
+  number?: string | null;
+  complement?: string | null;
+  zipCode?: string | null;
+  neighborhood?: string | null;
+}
+
+export interface TutorAddressResponse {
+  id: number;
+  tutorId: number;
+  addressTypeId: number;
+  addressTypeDescription: string;
+  cityId: number;
+  cityName: string;
+  stateCode: string;
+  stateName: string;
+  address: string;
+  number: string | null;
+  complement: string | null;
+  zipCode: string | null;
+  neighborhood: string | null;
+}
+
 // ── Pet ──────────────────────────────────────────────────────────────────
 
 export interface PetRequest {

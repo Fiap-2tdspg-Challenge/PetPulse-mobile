@@ -18,12 +18,21 @@ import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { salvarUsuarioLocal } from "../../services/storage";
-import { useCreateTutor, useCreateTutorPhone } from "../../hooks/useTutor";
+import { useCreateTutor, useCreateTutorPhone, useFindOrCreateState, useFindOrCreateCity, useCreateTutorAddress } from "../../hooks/useTutor";
+import { nomeEstado } from "../../constants/estadosBrasil";
+
+// Tipo de endereço não é escolhido pelo tutor no app: T_CLY_TIPO_ENDERECO só
+// tem Residencial/Comercial semeados e o app cadastra sempre um único
+// endereço (residencial) por tutor.
+const ADDRESS_TYPE_ID_RESIDENCIAL = 1;
 
 export const Cadastro = () => {
   const navigation = useNavigation();
   const criarTutor = useCreateTutor();
   const criarTelefone = useCreateTutorPhone();
+  const resolverEstado = useFindOrCreateState();
+  const resolverCidade = useFindOrCreateCity();
+  const criarEndereco = useCreateTutorAddress();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
@@ -34,6 +43,12 @@ export const Cadastro = () => {
     telefone: '',
     senha: '',
     endereco: '',
+    numero: '',
+    complemento: '',
+    cep: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
   });
 
   const [erros, setErros] = useState<Partial<typeof form>>({});
@@ -43,11 +58,18 @@ export const Cadastro = () => {
     setErros((prev) => ({ ...prev, [campo]: '' }));
   };
 
+  const mascararCEP = (valor: string) => {
+    const d = valor.replace(/\D/g, '').slice(0, 8);
+    const r = d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+    atualizar('cep', r);
+  };
+
   const validar = (): boolean => {
     const novosErros: Partial<typeof form> = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const cpfNumeros = form.cpf.replace(/\D/g, '');
     const telNumeros = form.telefone.replace(/\D/g, '');
+    const cepNumeros = form.cep.replace(/\D/g, '');
 
     if (form.nome.trim().length < 3)
       novosErros.nome = 'Nome deve ter pelo menos 3 caracteres.';
@@ -61,6 +83,16 @@ export const Cadastro = () => {
       novosErros.senha = 'Senha deve ter no mínimo 6 caracteres.';
     if (form.endereco.trim().length < 5)
       novosErros.endereco = 'Endereço inválido.';
+    if (form.numero.trim().length === 0)
+      novosErros.numero = 'Número é obrigatório.';
+    if (cepNumeros.length !== 8)
+      novosErros.cep = 'CEP deve conter 8 dígitos.';
+    if (form.bairro.trim().length < 2)
+      novosErros.bairro = 'Bairro inválido.';
+    if (form.cidade.trim().length < 2)
+      novosErros.cidade = 'Cidade inválida.';
+    if (!/^[A-Za-z]{2}$/.test(form.estado.trim()))
+      novosErros.estado = 'Use a sigla do estado (ex: SP).';
 
     setErros(novosErros);
     return Object.keys(novosErros).length === 0;
@@ -69,16 +101,43 @@ export const Cadastro = () => {
   const handleCadastrar = async () => {
     if (!validar()) return;
 
-    const { nome, cpf, telefone, endereco } = form;
+    const { nome, cpf, telefone, endereco, numero, complemento, cep, bairro, cidade } = form;
     const email = form.email.trim();
     const senha = form.senha.trim();
+    const estado = form.estado.trim().toUpperCase();
     setCarregando(true);
     try {
       // O Tutor é criado direto na API — sem isso, login não funciona
       // (POST /tutors/login consulta o banco de verdade).
       const tutor = await criarTutor.mutateAsync({ name: nome, cpf, email, password: senha });
       const fone = await criarTelefone.mutateAsync({ tutorId: tutor.id, phoneNumber: telefone });
-      await salvarUsuarioLocal({ ...tutor, telefone, endereco, phoneId: fone.id });
+
+      const estadoResolvido = await resolverEstado.mutateAsync({ code: estado, name: nomeEstado(estado) });
+      const cidadeResolvida = await resolverCidade.mutateAsync({ name: cidade, stateCode: estadoResolvido.code });
+      const enderecoApi = await criarEndereco.mutateAsync({
+        tutorId: tutor.id,
+        addressTypeId: ADDRESS_TYPE_ID_RESIDENCIAL,
+        cityId: cidadeResolvida.id,
+        address: endereco,
+        number: numero,
+        complement: complemento || null,
+        zipCode: cep,
+        neighborhood: bairro,
+      });
+
+      await salvarUsuarioLocal({
+        ...tutor,
+        telefone,
+        endereco,
+        numero,
+        complemento,
+        cep,
+        bairro,
+        cidade,
+        estado,
+        phoneId: fone.id,
+        enderecoId: enderecoApi.id,
+      });
 
       Alert.alert('Sucesso', 'Conta criada com sucesso!', [
         { text: 'OK', onPress: () => navigation.navigate('Login' as never) },
@@ -211,6 +270,88 @@ export const Cadastro = () => {
             </View>
             {erros.endereco ? <Text style={styles.erro}>{erros.endereco}</Text> : null}
 
+            {/* Número + Complemento */}
+            <View style={styles.linha}>
+              <View style={[styles.inputWrap, styles.inputEstreita]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Número"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  keyboardType="numeric"
+                  value={form.numero}
+                  onChangeText={(v) => atualizar('numero', v)}
+                />
+              </View>
+              <View style={[styles.inputWrap, styles.inputLarga]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Complemento"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  autoCapitalize="words"
+                  value={form.complemento}
+                  onChangeText={(v) => atualizar('complemento', v)}
+                />
+              </View>
+            </View>
+            {erros.numero ? <Text style={styles.erro}>{erros.numero}</Text> : null}
+
+            {/* CEP */}
+            <View style={styles.inputWrap}>
+              <Ionicons name="mail-open-outline" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcone} />
+              <TextInput
+                style={styles.input}
+                placeholder="CEP"
+                placeholderTextColor="rgba(255,255,255,0.6)"
+                keyboardType="numeric"
+                maxLength={9}
+                value={form.cep}
+                onChangeText={mascararCEP}
+              />
+            </View>
+            {erros.cep ? <Text style={styles.erro}>{erros.cep}</Text> : null}
+
+            {/* Bairro */}
+            <View style={styles.inputWrap}>
+              <Ionicons name="home-outline" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcone} />
+              <TextInput
+                style={styles.input}
+                placeholder="Bairro"
+                placeholderTextColor="rgba(255,255,255,0.6)"
+                autoCapitalize="words"
+                value={form.bairro}
+                onChangeText={(v) => atualizar('bairro', v)}
+              />
+            </View>
+            {erros.bairro ? <Text style={styles.erro}>{erros.bairro}</Text> : null}
+
+            {/* Cidade + Estado */}
+            <View style={styles.linha}>
+              <View style={[styles.inputWrap, styles.inputLarga]}>
+                <Ionicons name="business-outline" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcone} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Cidade"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  autoCapitalize="words"
+                  value={form.cidade}
+                  onChangeText={(v) => atualizar('cidade', v)}
+                />
+              </View>
+              <View style={[styles.inputWrap, styles.inputEstreita]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="UF"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  autoCapitalize="characters"
+                  maxLength={2}
+                  value={form.estado}
+                  onChangeText={(v) => atualizar('estado', v.toUpperCase())}
+                />
+              </View>
+            </View>
+            {erros.cidade ? <Text style={styles.erro}>{erros.cidade}</Text> : null}
+            {erros.estado ? <Text style={styles.erro}>{erros.estado}</Text> : null}
+
             {/* Botão Cadastrar */}
             <TouchableOpacity
               style={[styles.botao, carregando && { opacity: 0.6 }]}
@@ -273,6 +414,17 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 14,
     height: 50,
+  },
+  linha: {
+    flexDirection: "row",
+    width: "100%",
+    gap: 8,
+  },
+  inputLarga: {
+    flex: 2,
+  },
+  inputEstreita: {
+    flex: 1,
   },
   inputIcone: {
     marginRight: 10,

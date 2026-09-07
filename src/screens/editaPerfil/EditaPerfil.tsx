@@ -17,7 +17,19 @@ import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { useAuth } from "../../context/AuthContext";
-import { useUpdateTutor, useCreateTutorPhone, useUpdateTutorPhone } from "../../hooks/useTutor";
+import {
+  useUpdateTutor,
+  useCreateTutorPhone,
+  useUpdateTutorPhone,
+  useFindOrCreateState,
+  useFindOrCreateCity,
+  useCreateTutorAddress,
+  useUpdateTutorAddress,
+} from "../../hooks/useTutor";
+import { nomeEstado } from "../../constants/estadosBrasil";
+
+// Mesmo padrão do Cadastro: sem seletor de tipo de endereço, sempre Residencial.
+const ADDRESS_TYPE_ID_RESIDENCIAL = 1;
 
 export const EditaPerfil = () => {
   const navigation = useNavigation();
@@ -25,6 +37,10 @@ export const EditaPerfil = () => {
   const atualizarTutor = useUpdateTutor();
   const criarTelefone = useCreateTutorPhone();
   const atualizarTelefone = useUpdateTutorPhone();
+  const resolverEstado = useFindOrCreateState();
+  const resolverCidade = useFindOrCreateCity();
+  const criarEndereco = useCreateTutorAddress();
+  const atualizarEndereco = useUpdateTutorAddress();
   const [carregando, setCarregando] = useState(false);
   const [senhaVisivel, setSenhaVisivel] = useState(false);
 
@@ -34,6 +50,12 @@ export const EditaPerfil = () => {
     telefone: usuario?.telefone ?? "",
     cpf: usuario?.cpf ?? "",
     endereco: usuario?.endereco ?? "",
+    numero: usuario?.numero ?? "",
+    complemento: usuario?.complemento ?? "",
+    cep: usuario?.cep ?? "",
+    bairro: usuario?.bairro ?? "",
+    cidade: usuario?.cidade ?? "",
+    estado: usuario?.estado ?? "",
     senha: "",
   });
 
@@ -61,6 +83,12 @@ export const EditaPerfil = () => {
     atualizar("cpf", r);
   };
 
+  const mascararCEP = (valor: string) => {
+    const d = valor.replace(/\D/g, "").slice(0, 8);
+    const r = d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+    atualizar("cep", r);
+  };
+
   const validar = (): boolean => {
     const novosErros: Partial<Record<keyof typeof form, string>> = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -70,6 +98,11 @@ export const EditaPerfil = () => {
     if (form.telefone.replace(/\D/g, "").length < 10) novosErros.telefone = "Telefone inválido.";
     if (form.cpf.replace(/\D/g, "").length !== 11) novosErros.cpf = "CPF deve ter 11 dígitos.";
     if (form.endereco.trim().length < 5) novosErros.endereco = "Endereço inválido.";
+    if (form.numero.trim().length === 0) novosErros.numero = "Número é obrigatório.";
+    if (form.cep.replace(/\D/g, "").length !== 8) novosErros.cep = "CEP deve conter 8 dígitos.";
+    if (form.bairro.trim().length < 2) novosErros.bairro = "Bairro inválido.";
+    if (form.cidade.trim().length < 2) novosErros.cidade = "Cidade inválida.";
+    if (!/^[A-Za-z]{2}$/.test(form.estado.trim())) novosErros.estado = "Use a sigla do estado (ex: SP).";
     if (form.senha.length < 6) novosErros.senha = "Senha deve ter no mínimo 6 caracteres.";
 
     setErros(novosErros);
@@ -85,6 +118,12 @@ export const EditaPerfil = () => {
       const cpf = form.cpf.replace(/\D/g, "");
       const telefone = form.telefone.replace(/\D/g, "");
       const endereco = form.endereco.trim();
+      const numero = form.numero.trim();
+      const complemento = form.complemento.trim();
+      const cep = form.cep.trim();
+      const bairro = form.bairro.trim();
+      const cidade = form.cidade.trim();
+      const estado = form.estado.trim().toUpperCase();
       const senha = form.senha.trim();
 
       // Atualiza o Tutor de verdade na API — o PUT /tutors/{id} exige senha
@@ -102,11 +141,34 @@ export const EditaPerfil = () => {
           })
         : await criarTelefone.mutateAsync({ tutorId: usuario.id, phoneNumber: telefone });
 
+      const estadoResolvido = await resolverEstado.mutateAsync({ code: estado, name: nomeEstado(estado) });
+      const cidadeResolvida = await resolverCidade.mutateAsync({ name: cidade, stateCode: estadoResolvido.code });
+      const dadosEndereco = {
+        tutorId: usuario.id,
+        addressTypeId: ADDRESS_TYPE_ID_RESIDENCIAL,
+        cityId: cidadeResolvida.id,
+        address: endereco,
+        number: numero,
+        complement: complemento || null,
+        zipCode: cep,
+        neighborhood: bairro,
+      };
+      const enderecoApi = usuario.enderecoId
+        ? await atualizarEndereco.mutateAsync({ id: usuario.enderecoId, dados: dadosEndereco })
+        : await criarEndereco.mutateAsync(dadosEndereco);
+
       await atualizarUsuario({
         ...tutorAtualizado,
         telefone,
         endereco,
+        numero,
+        complemento,
+        cep,
+        bairro,
+        cidade,
+        estado,
         phoneId: fone.id,
+        enderecoId: enderecoApi.id,
       });
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!", [
@@ -212,6 +274,88 @@ export const EditaPerfil = () => {
             </View>
             {erros.endereco ? <Text style={styles.erro}>{erros.endereco}</Text> : null}
 
+            {/* Número + Complemento */}
+            <View style={styles.linha}>
+              <View style={[styles.inputWrap, styles.inputEstreita]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Número"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  keyboardType="numeric"
+                  value={form.numero}
+                  onChangeText={(v) => atualizar("numero", v)}
+                />
+              </View>
+              <View style={[styles.inputWrap, styles.inputLarga]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Complemento"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  autoCapitalize="words"
+                  value={form.complemento}
+                  onChangeText={(v) => atualizar("complemento", v)}
+                />
+              </View>
+            </View>
+            {erros.numero ? <Text style={styles.erro}>{erros.numero}</Text> : null}
+
+            {/* CEP */}
+            <View style={styles.inputWrap}>
+              <Ionicons name="mail-open-outline" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcone} />
+              <TextInput
+                style={styles.input}
+                placeholder="CEP"
+                placeholderTextColor="rgba(255,255,255,0.6)"
+                keyboardType="numeric"
+                maxLength={9}
+                value={form.cep}
+                onChangeText={mascararCEP}
+              />
+            </View>
+            {erros.cep ? <Text style={styles.erro}>{erros.cep}</Text> : null}
+
+            {/* Bairro */}
+            <View style={styles.inputWrap}>
+              <Ionicons name="home-outline" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcone} />
+              <TextInput
+                style={styles.input}
+                placeholder="Bairro"
+                placeholderTextColor="rgba(255,255,255,0.6)"
+                autoCapitalize="words"
+                value={form.bairro}
+                onChangeText={(v) => atualizar("bairro", v)}
+              />
+            </View>
+            {erros.bairro ? <Text style={styles.erro}>{erros.bairro}</Text> : null}
+
+            {/* Cidade + Estado */}
+            <View style={styles.linha}>
+              <View style={[styles.inputWrap, styles.inputLarga]}>
+                <Ionicons name="business-outline" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcone} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Cidade"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  autoCapitalize="words"
+                  value={form.cidade}
+                  onChangeText={(v) => atualizar("cidade", v)}
+                />
+              </View>
+              <View style={[styles.inputWrap, styles.inputEstreita]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="UF"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
+                  autoCapitalize="characters"
+                  maxLength={2}
+                  value={form.estado}
+                  onChangeText={(v) => atualizar("estado", v.toUpperCase())}
+                />
+              </View>
+            </View>
+            {erros.cidade ? <Text style={styles.erro}>{erros.cidade}</Text> : null}
+            {erros.estado ? <Text style={styles.erro}>{erros.estado}</Text> : null}
+
             {/* Senha (confirma a alteração na API) */}
             <View style={styles.inputWrap}>
               <Ionicons name="lock-closed-outline" size={18} color="rgba(255,255,255,0.7)" style={styles.inputIcone} />
@@ -277,6 +421,17 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 14,
     height: 50,
+  },
+  linha: {
+    flexDirection: "row",
+    width: "100%",
+    gap: 8,
+  },
+  inputLarga: {
+    flex: 2,
+  },
+  inputEstreita: {
+    flex: 1,
   },
   inputIcone: { marginRight: 10 },
   inputIconeDireita: { marginLeft: 8 },
