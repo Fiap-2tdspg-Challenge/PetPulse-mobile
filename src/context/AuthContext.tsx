@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Usuario } from '../types/Usuario';
 import { Veterinario } from '../types/Veterinario';
-import { getUsuarios, getVeterinarios, salvarUsuarioLocal } from '../services/storage';
-import { loginTutor } from '../services/api/tutorApi';
+import { getUsuarios, getVeterinarios, salvarUsuarioLocal, removerUsuarioLocal } from '../services/storage';
+import { loginTutor, deleteTutor } from '../services/api/tutorApi';
 
 const SESSAO_KEY = '@petpulse:sessao';
 
@@ -21,6 +21,7 @@ interface AuthContextData {
   loginVeterinario: (email: string, senha: string) => Promise<boolean>;
   logout: () => Promise<void>;
   atualizarUsuario: (dados: Usuario) => Promise<void>;
+  excluirConta: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
@@ -116,9 +117,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUsuario(dados);
   };
 
+  // Exclui o Tutor de verdade na API (DELETE /tutors/{id} — bloqueia com 409
+  // se ainda houver pets cadastrados). Erros propagam pra quem chamou, pra
+  // exibir a mensagem certa (ex: "remova os pets primeiro").
+  const excluirConta = async () => {
+    if (!usuario) return;
+    await deleteTutor(usuario.id);
+    await removerUsuarioLocal(usuario.id);
+    await AsyncStorage.removeItem(SESSAO_KEY);
+    setUsuario(null);
+  };
+
   return (
     <AuthContext.Provider
-      value={{ usuario, veterinario, carregando, login, loginVeterinario, logout, atualizarUsuario }}
+      value={{ usuario, veterinario, carregando, login, loginVeterinario, logout, atualizarUsuario, excluirConta }}
     >
       {children}
     </AuthContext.Provider>

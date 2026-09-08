@@ -33,6 +33,13 @@ export async function salvarUsuarioLocal(usuario: Usuario): Promise<void> {
   await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify(atualizados));
 }
 
+/** Remove a cópia local de um Tutor (usado ao excluir a conta). */
+export async function removerUsuarioLocal(id: number): Promise<void> {
+  const usuarios = await getUsuarios();
+  const atualizados = usuarios.filter((u) => u.id !== id);
+  await AsyncStorage.setItem(KEYS.USUARIOS, JSON.stringify(atualizados));
+}
+
 // ── VETERINÁRIOS (login local, temporário até a API ganhar JWT + roles) ──────
 
 export async function getVeterinarios(): Promise<Veterinario[]> {

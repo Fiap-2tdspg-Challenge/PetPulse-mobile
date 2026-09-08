@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { createTutor, updateTutor } from '../services/api/tutorApi';
+import { createTutor, updateTutor, deleteTutor } from '../services/api/tutorApi';
 import { createTutorPhone, updateTutorPhone } from '../services/api/tutorPhoneApi';
 import { findOrCreateState } from '../services/api/stateApi';
 import { findOrCreateCity } from '../services/api/cityApi';
@@ -15,6 +15,12 @@ export function useCreateTutor() {
 export function useUpdateTutor() {
   return useMutation({
     mutationFn: ({ id, dados }: { id: number; dados: TutorRequest }) => updateTutor(id, dados),
+  });
+}
+
+export function useDeleteTutor() {
+  return useMutation({
+    mutationFn: (id: number) => deleteTutor(id),
   });
 }
 

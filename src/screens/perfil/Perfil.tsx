@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { Footer } from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
+import { ApiError } from "../../services/api/client";
 
 function formatarData(iso: string): string {
   const [ano, mes, dia] = iso.slice(0, 10).split("-");
@@ -54,9 +56,38 @@ const InfoItem = ({
 
 export const Perfil = () => {
   const navigation = useNavigation();
-  const { usuario, logout } = useAuth();
+  const { usuario, logout, excluirConta } = useAuth();
+  const [excluindo, setExcluindo] = useState(false);
 
   if (!usuario) return null;
+
+  const handleExcluirConta = () => {
+    Alert.alert(
+      "Excluir conta",
+      "Essa ação não pode ser desfeita. Tem certeza que deseja excluir sua conta?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            setExcluindo(true);
+            try {
+              await excluirConta();
+            } catch (erro) {
+              const mensagem =
+                erro instanceof ApiError
+                  ? erro.message
+                  : "Não foi possível excluir a conta. Tente novamente.";
+              Alert.alert("Erro", mensagem);
+            } finally {
+              setExcluindo(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const iniciais = usuario.name
     .split(" ")
@@ -108,6 +139,17 @@ export const Perfil = () => {
         <TouchableOpacity style={styles.sairBtn} activeOpacity={0.8} onPress={logout}>
           <Ionicons name="log-out-outline" size={20} color={cores.erro} />
           <Text style={styles.sairTexto}>Sair da conta</Text>
+        </TouchableOpacity>
+
+        {/* EXCLUIR CONTA */}
+        <TouchableOpacity
+          style={[styles.excluirBtn, excluindo && { opacity: 0.6 }]}
+          activeOpacity={0.8}
+          onPress={handleExcluirConta}
+          disabled={excluindo}
+        >
+          <Ionicons name="trash-outline" size={20} color={cores.branco} />
+          <Text style={styles.excluirTexto}>{excluindo ? "Excluindo..." : "Excluir conta"}</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -230,5 +272,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: cores.erro,
+  },
+  excluirBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: cores.erro,
+  },
+  excluirTexto: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: cores.branco,
   },
 });

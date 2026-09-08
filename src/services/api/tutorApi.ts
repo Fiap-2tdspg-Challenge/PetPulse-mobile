@@ -25,3 +25,9 @@ export function updateTutor(id: number, request: TutorRequest): Promise<TutorRes
     body: JSON.stringify(request),
   });
 }
+
+export function deleteTutor(id: number): Promise<void> {
+  return apiFetch<void>(`/tutors/${id}`, {
+    method: 'DELETE',
+  });
+}
