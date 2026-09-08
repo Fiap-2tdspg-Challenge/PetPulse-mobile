@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -17,10 +17,9 @@ import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { useCreatePet } from "../../hooks/usePets";
-import { useFindOrCreateSpecies, useFindOrCreateBreed } from "../../hooks/useCatalogoPet";
+import { useFindOrCreateSpecies, useFindOrCreateBreed, usePetSizes } from "../../hooks/useCatalogoPet";
 import { useAuth } from "../../context/AuthContext";
 import { ApiSex } from "../../types/types";
-import { PORTES } from "../../constants/catalogoPet";
 
 export const CadastraPet = () => {
   const navigation = useNavigation();
@@ -28,6 +27,7 @@ export const CadastraPet = () => {
   const resolverEspecie = useFindOrCreateSpecies();
   const resolverRaca = useFindOrCreateBreed();
   const criarPet = useCreatePet();
+  const { data: portes = [] } = usePetSizes();
   const carregando = resolverEspecie.isPending || resolverRaca.isPending || criarPet.isPending;
 
   const [form, setForm] = useState({
@@ -39,10 +39,18 @@ export const CadastraPet = () => {
   });
 
   const [sexo, setSexo] = useState<ApiSex>("M");
-  const [porteId, setPorteId] = useState<number>(PORTES[1].id);
+  const [porteId, setPorteId] = useState<number | null>(null);
   const [castrado, setCastrado] = useState(false);
 
   const [erros, setErros] = useState<Partial<Record<keyof typeof form, string>>>({});
+
+  // Assim que os portes chegarem da API, seleciona "Médio" por padrão (ou o
+  // primeiro da lista, caso a descrição não bata exatamente).
+  useEffect(() => {
+    if (porteId !== null || portes.length === 0) return;
+    const medio = portes.find((p) => p.description.toLowerCase() === "médio");
+    setPorteId((medio ?? portes[0]).id);
+  }, [portes, porteId]);
 
   const atualizar = (campo: keyof typeof form, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
@@ -79,7 +87,7 @@ export const CadastraPet = () => {
 
   const handleCadastrar = async () => {
     if (!validar()) return;
-    if (!usuario) return;
+    if (!usuario || porteId === null) return;
 
     try {
       const especie = await resolverEspecie.mutateAsync(form.especie.trim());
@@ -236,8 +244,8 @@ export const CadastraPet = () => {
             {/* Porte */}
             <ToggleGroup
               label="Porte"
-              options={PORTES.map((p) => ({ label: p.nome, value: String(p.id) }))}
-              value={String(porteId)}
+              options={portes.map((p) => ({ label: p.description, value: String(p.id) }))}
+              value={String(porteId ?? "")}
               onChange={(v) => setPorteId(Number(v))}
             />
 

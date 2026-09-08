@@ -60,7 +60,7 @@ PetPulse-mobile/
 ├── src/
 │   ├── components/          # Componentes reutilizáveis (Footer, PawBackground)
 │   ├── constants/
-│   │   └── catalogoPet.ts   # Catálogo hardcoded de Espécie/Raça/Porte (ver limitações da API)
+│   │   └── estadosBrasil.ts # Nomes das UFs (usado só para o POST /states, não é catálogo hardcoded de negócio)
 │   ├── context/
 │   │   └── AuthContext.tsx  # Contexto de autenticação
 │   ├── hooks/                # Hooks de dados (TanStack Query) — usePets, useHistorico, useAlertas, useTutor
@@ -137,11 +137,10 @@ Pets, Histórico Clínico e Alertas Inteligentes são lidos/gravados na API Java
 
 Ao criar uma conta, o app cria a sessão local **e** um Tutor real via `POST /tutors`, guardando o `tutorId` retornado. Esse `tutorId` é o que vincula os pets do usuário aos dados reais da API.
 
-Espécie e Raça são digitadas livremente pelo tutor: o app resolve o texto para um id real via `POST /species` e `POST /breeds` na API (endpoints "buscar ou cadastrar" — retornam o registro existente com esse nome, ou criam um novo na hora), antes de enviar o cadastro/edição do pet. Ver `src/hooks/useCatalogoPet.ts`.
+Espécie e Raça são digitadas livremente pelo tutor: o app resolve o texto para um id real via `POST /species` e `POST /breeds` na API (endpoints "buscar ou cadastrar" — retornam o registro existente com esse nome, ou criam um novo na hora), antes de enviar o cadastro/edição do pet. Porte vem de `GET /pet-sizes` (catálogo fixo, só leitura — não é "buscar ou cadastrar" como Espécie/Raça, já que os valores são um enum fechado). Ver `src/hooks/useCatalogoPet.ts`.
 
 **Limitações conhecidas do backend atual** (não são bugs do mobile, são do estado atual da API):
 
-- **Porte sem endpoint de catálogo**: ao contrário de Espécie/Raça, `PetSize` ainda não tem controller próprio — é só uma FK obrigatória em `PetRequest`. O seletor de Porte (`src/constants/catalogoPet.ts`) está hardcoded a partir do script de carga do banco (`PetPulseDB/03_CARGA.sql`). Quando a API ganhar um endpoint de listagem, é só trocar esse arquivo por uma chamada real — os formulários não mudam.
 - **Sem filtro por tutor/pet nas listagens**: `GET /pets`, `GET /clinical-histories` e `GET /smart-alerts` só paginam todos os registros (sem filtro por `tutorId`/`petId`). O app busca uma página grande (`size=200`) e filtra no cliente — ver `src/hooks/usePets.ts`, `useHistorico.ts`, `useAlertas.ts`.
 - **Histórico Clínico sem profissional vinculado**: `professionalId` é opcional em `ClinicalHistoryRequest`, mas não existe endpoint de listagem de profissionais na API (mesma situação de Espécie/Raça antes do `POST /species`/`POST /breeds`). Por isso, o formulário de histórico no app não coleta profissional — os registros são criados sempre com `professionalId: null`. Quando a API ganhar um endpoint de profissionais, dá pra adicionar um seletor igual ao de Espécie/Raça.
 

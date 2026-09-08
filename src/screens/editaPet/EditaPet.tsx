@@ -17,9 +17,8 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
 import { useUpdatePet } from "../../hooks/usePets";
-import { useFindOrCreateSpecies, useFindOrCreateBreed } from "../../hooks/useCatalogoPet";
+import { useFindOrCreateSpecies, useFindOrCreateBreed, usePetSizes } from "../../hooks/useCatalogoPet";
 import { ApiSex, PetResponse } from "../../types/types";
-import { PORTES } from "../../constants/catalogoPet";
 
 function isoParaDisplay(iso: string): string {
   const [ano, mes, dia] = iso.split("-");
@@ -39,6 +38,7 @@ export const EditaPet = () => {
   const resolverEspecie = useFindOrCreateSpecies();
   const resolverRaca = useFindOrCreateBreed();
   const atualizarPet = useUpdatePet();
+  const { data: portes = [] } = usePetSizes();
   const carregando = resolverEspecie.isPending || resolverRaca.isPending || atualizarPet.isPending;
 
   const [form, setForm] = useState({
@@ -50,7 +50,7 @@ export const EditaPet = () => {
   });
 
   const [sexo, setSexo] = useState<ApiSex>(pet.sex);
-  const [porteId, setPorteId] = useState<number>(pet.petSizeId ?? PORTES[1].id);
+  const [porteId, setPorteId] = useState<number>(pet.petSizeId);
   const [castrado, setCastrado] = useState(pet.neutered);
   const [erros, setErros] = useState<Partial<Record<keyof typeof form, string>>>({});
 
@@ -233,7 +233,7 @@ export const EditaPet = () => {
 
             <ToggleGroup
               label="Porte"
-              options={PORTES.map((p) => ({ label: p.nome, value: String(p.id) }))}
+              options={portes.map((p) => ({ label: p.description, value: String(p.id) }))}
               value={String(porteId)}
               onChange={(v) => setPorteId(Number(v))}
             />

@@ -128,6 +128,13 @@ export interface TutorAddressResponse {
   neighborhood: string | null;
 }
 
+// ── Pet Size (catálogo, só listagem) ────────────────────────────────────────
+
+export interface PetSizeResponse {
+  id: number;
+  description: string;
+}
+
 // ── Pet ──────────────────────────────────────────────────────────────────
 
 export interface PetRequest {
