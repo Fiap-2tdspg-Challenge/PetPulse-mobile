@@ -42,13 +42,13 @@ export const PainelVeterinario = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: cores.branco },
+  safeArea: { flex: 1, backgroundColor: cores.roxoMedio },
   header: {
     backgroundColor: cores.roxoMedio,
     alignItems: "center",
-    paddingVertical: 32,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    paddingVertical: 15,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
     gap: 4,
   },
   avatar: {
@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
 
   corpo: {
     flex: 1,
+    backgroundColor: cores.branco,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 40,
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     marginHorizontal: 20,
-    marginBottom: 20,
+    marginTop: 15,
     paddingVertical: 14,
     borderRadius: 14,
     backgroundColor: cores.branco,
