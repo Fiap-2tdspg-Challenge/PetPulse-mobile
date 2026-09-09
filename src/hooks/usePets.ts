@@ -13,6 +13,15 @@ export function usePets(tutorId?: number) {
   });
 }
 
+// Todos os pets cadastrados, sem filtro por tutor — usado no painel do
+// veterinário, que precisa localizar o pet de qualquer tutor.
+export function useAllPets() {
+  return useQuery({
+    queryKey: ['pets', 'todos'],
+    queryFn: () => getAllPets(),
+  });
+}
+
 export function useCreatePet() {
   const queryClient = useQueryClient();
   return useMutation({

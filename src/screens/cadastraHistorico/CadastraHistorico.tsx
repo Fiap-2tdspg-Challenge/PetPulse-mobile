@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
+import { useAuth } from "../../context/AuthContext";
 import { useCreateHistorico, useUpdateHistorico } from "../../hooks/useHistorico";
 import { ApiRecordType, ClinicalHistoryResponse } from "../../types/types";
 
@@ -44,6 +45,7 @@ export const CadastraHistorico = () => {
   const params = route.params as { petId: number; tipoRegistro: ApiRecordType; historico?: ClinicalHistoryResponse };
   const { petId, historico } = params;
   const modoEdicao = !!historico;
+  const { veterinario } = useAuth();
 
   const criarHistorico = useCreateHistorico();
   const atualizarHistorico = useUpdateHistorico();
@@ -86,7 +88,7 @@ export const CadastraHistorico = () => {
 
     const dados = {
       petId,
-      professionalId: null,
+      professionalId: modoEdicao ? historico!.professionalId : veterinario?.id ?? null,
       recordType: tipoRegistro,
       description: form.descricao.trim(),
       returnDate: form.dtRetorno ? displayParaISO(form.dtRetorno) : null,
