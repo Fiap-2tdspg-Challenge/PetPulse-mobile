@@ -23,7 +23,7 @@ Aplicativo mobile desenvolvido em **React Native + Expo** para gerenciamento com
 
 ## Funcionalidades
 
-- **Autenticação** — Login do Tutor com JWT de verdade (Spring Security + OAuth2 Resource Server); login do Veterinário ainda local, temporário.
+- **Autenticação** — Login do Tutor e do Veterinário com JWT de verdade (Spring Security + OAuth2 Resource Server, mesmo `POST /login` pros dois — o backend resolve o papel pelo e-mail).
 - **Gerenciamento de pets** — Cadastro, edição e visualização de perfil completo (espécie, raça, peso, porte, sexo, castração).
 - **Histórico clínico** — Registro de vacinas, consultas, exames, medicações, cirurgias e outros eventos, com suporte a datas de retorno.
 - **Alertas inteligentes** — Notificações por nível de risco (BAIXO, MÉDIO, ALTO, CRÍTICO) geradas por IoT, pelo sistema ou manualmente.
@@ -42,13 +42,13 @@ Aplicativo mobile desenvolvido em **React Native + Expo** para gerenciamento com
 | Navegação | React Navigation v7 (Native Stack + Bottom Tabs) |
 | Busca/cache de dados | TanStack Query (`@tanstack/react-query`) |
 | Backend | API Java real — [PetPulse-Api](../PetPulse-Api) (Spring Boot) |
-| Persistência local (só Veterinário) | AsyncStorage `2.2.0` |
+| Persistência local | AsyncStorage `2.2.0` (instalado, mas sem uso ativo hoje — nem Tutor nem Veterinário persistem sessão) |
 | Localização | expo-location `~19.0.8` |
 | Mapas | react-native-maps `1.20.1` |
 | Gradientes | expo-linear-gradient `~15.0.8` |
 | Ícones | @expo/vector-icons `^15.1.1` |
 
-> **Nota sobre a camada de dados**: Tutor (perfil, telefone, endereço), Pets, Histórico Clínico e Alertas Inteligentes vêm todos de verdade da **PetPulse-Api** (Spring Boot), via `src/services/api/` + hooks em `src/hooks/` (TanStack Query) — sem cache local: cada login busca tudo de novo da API, então nunca existe uma cópia desatualizada em relação ao banco. `src/services/storage.ts` (AsyncStorage) cuida só do login local do Veterinário (temporário, até esse perfil ganhar JWT também). Veja [Integração com a API](#integração-com-a-api-petpulse-api) para detalhes.
+> **Nota sobre a camada de dados**: Tutor (perfil, telefone, endereço), Veterinário (perfil), Pets, Histórico Clínico e Alertas Inteligentes vêm todos de verdade da **PetPulse-Api** (Spring Boot), via `src/services/api/` + hooks em `src/hooks/` (TanStack Query) — sem nenhum cache local: cada login busca tudo de novo da API, então nunca existe uma cópia desatualizada em relação ao banco. Veja [Integração com a API](#integração-com-a-api-petpulse-api) para detalhes.
 
 ---
 
@@ -64,9 +64,8 @@ PetPulse-mobile/
 │   ├── context/
 │   │   └── AuthContext.tsx  # Contexto de autenticação
 │   ├── hooks/                # Hooks de dados (TanStack Query) — usePets, useHistorico, useAlertas, useTutor
-│   ├── mocks/               # Dados de referência (não usados pelos hooks atuais)
 │   ├── routes/
-│   │   └── Routes.tsx       # Definição das rotas (autenticado / não autenticado)
+│   │   └── Routes.tsx       # Definição das rotas (Tutor / Veterinário / não autenticado)
 │   ├── screens/             # Telas da aplicação (somente UI, sem lógica de dados)
 │   │   ├── login/
 │   │   ├── cadastro/
@@ -77,10 +76,12 @@ PetPulse-mobile/
 │   │   ├── editaPet/
 │   │   ├── perfilPet/
 │   │   ├── historicoClinico/
-│   │   └── localizaPet/
+│   │   ├── cadastraHistorico/
+│   │   ├── localizaPet/
+│   │   ├── coleira/
+│   │   └── painelVeterinario/ # Painel do Veterinário (login real; demais funcionalidades ainda não implementadas)
 │   ├── services/
-│   │   ├── api/             # Client HTTP + DTOs + mappers para a PetPulse-Api
-│   │   ├── storage.ts       # AsyncStorage — só o login local do Veterinário
+│   │   ├── api/             # Client HTTP + DTOs para a PetPulse-Api (inclui token JWT, ver client.ts)
 │   │   └── queryClient.ts   # Instância do QueryClient do TanStack Query
 │   ├── theme/
 │   │   └── cores.ts         # Paleta de cores e gradientes
@@ -167,9 +168,15 @@ https://www.figma.com/design/azNxLqmfQtd8EnDj1zAQfV/PetPulse?node-id=92-313&t=c9
 
 **Tutor**: não tem usuário de teste pré-semeado — crie uma conta pela tela de Cadastro (isso já cria o Tutor de verdade na API) e faça login com o e-mail/senha usados. Lembrando que o token expira em 2 minutos (ver [Integração com a API](#integração-com-a-api-petpulse-api)).
 
-**Veterinário**: login continua local/mock — dados de teste em `src/mocks/veterinario.ts`, semeados no `AsyncStorage` na primeira execução via `seedStorage()` (`src/services/storage.ts`).
+**Veterinário**: login também já é real (mesmo `POST /login`). Não tem tela de autocadastro — use um dos profissionais já semeados no banco (`PetPulseDB/03_CARGA.sql`, `PRC_CARGA_PROFISSIONAL`):
 
-Pets, Histórico Clínico e Alertas Inteligentes são sempre lidos da API real (`PetPulse-Api`, rodando localmente) — os arquivos em `src/mocks/` (exceto `veterinario.ts`) continuam no repositório só como referência.
+| E-mail | Senha |
+|---|---|
+| `carlos.andrade@vetcare.com` | `vet123` |
+| `fernanda.lima@vetcare.com` | `vet456` |
+| `roberto.souza@petsaude.com` | `vet789` |
+
+Todos os dados (Tutor, Veterinário, Pets, Histórico Clínico, Alertas Inteligentes) vêm sempre da API real (`PetPulse-Api`, rodando localmente).
 
 ---
 

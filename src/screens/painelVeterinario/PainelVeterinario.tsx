@@ -5,10 +5,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { cores } from "../../theme/cores";
 import { useAuth } from "../../context/AuthContext";
 
-// Painel inicial do veterinário. Login ainda é local (ver AuthContext) enquanto
-// a API não ganha autenticação real com JWT + roles — quando isso acontecer,
-// esta tela vira o ponto de partida para as funcionalidades reais do perfil
-// (ex: consultar/gerenciar histórico clínico dos pets atendidos).
+// Painel inicial do veterinário. Login já é real (JWT via POST /login, ver
+// AuthContext) — as funcionalidades do painel (buscar pets, histórico
+// clínico, alertas) ainda não foram implementadas, só o login.
 export const PainelVeterinario = () => {
   const { veterinario, logout } = useAuth();
 
@@ -20,17 +19,17 @@ export const PainelVeterinario = () => {
         <View style={styles.avatar}>
           <Ionicons name="medkit" size={28} color={cores.branco} />
         </View>
-        <Text style={styles.nome}>{veterinario?.nome}</Text>
+        <Text style={styles.nome}>{veterinario?.name}</Text>
         <Text style={styles.sub}>{veterinario?.crmv}</Text>
-        <Text style={styles.sub}>{veterinario?.clinica}</Text>
+        <Text style={styles.sub}>{veterinario?.clinicName}</Text>
       </View>
 
       <View style={styles.corpo}>
         <Ionicons name="construct-outline" size={40} color={cores.cinzaMedio} />
         <Text style={styles.emBreveTitulo}>Painel do veterinário</Text>
         <Text style={styles.emBreveTexto}>
-          As funcionalidades para o perfil de veterinário (ex: consultar e registrar histórico clínico
-          dos pets atendidos) chegam aqui assim que a API tiver autenticação real com perfis.
+          O login já é real — as funcionalidades do painel (buscar pets, histórico clínico, alertas)
+          ainda estão por vir.
         </Text>
       </View>
 

@@ -64,9 +64,31 @@ export interface TutorLoginRequest {
   password: string;
 }
 
-// Resposta de POST /login (AuthController) — só o token, sem dados do tutor. 
+// Resposta de POST /login (AuthController) — só o token, sem dados do tutor.
 export interface TokenResponse {
   token: string;
+}
+
+// ── Professional (Veterinário) ──────────────────────────────────────────────
+// Login compartilha o mesmo POST /login (mesmo request/response de Tutor) —
+// o backend resolve o papel (ROLE_TUTOR/ROLE_PROFESSIONAL) pelo e-mail.
+
+export interface ProfessionalRequest {
+  name: string;
+  email: string;
+  password: string;
+  crmv: string;
+  clinicId: number;
+}
+
+export interface ProfessionalResponse {
+  id: number;
+  name: string;
+  email: string;
+  crmv: string;
+  clinicId: number;
+  clinicName: string;
+  createdAt: string;
 }
 
 export interface TutorPhoneRequest {

@@ -1,9 +1,4 @@
-// Mantem o veterinario até o back terminar sua funcionaldiade
-export interface Veterinario {
-  idVeterinario: number;
-  nome: string;
-  email: string;
-  senha: string;
-  crmv: string;
-  clinica: string;
-}
+import { ProfessionalResponse } from './types';
+
+/** Profissional (veterinário) no app: os dados reais vindos da API — sem cópia local, sem senha guardada. */
+export type Veterinario = ProfessionalResponse;

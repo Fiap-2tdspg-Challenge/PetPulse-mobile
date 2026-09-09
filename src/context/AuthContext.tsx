@@ -1,20 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Usuario } from '../types/Usuario';
 import { Veterinario } from '../types/Veterinario';
-import { getVeterinarios } from '../services/storage';
 import { loginTutor, getTutorByEmail, deleteTutor } from '../services/api/tutorApi';
 import { getTutorPhoneByTutorId } from '../services/api/tutorPhoneApi';
 import { getTutorAddressByTutorId } from '../services/api/tutorAddressApi';
+import { loginProfessional, getProfessionalByEmail } from '../services/api/professionalApi';
 import { setAuthToken } from '../services/api/client';
 import { TutorResponse } from '../types/types';
-
-const SESSAO_KEY = '@petpulse:sessao';
-
-interface SessaoArmazenada {
-  tipo: 'VETERINARIO';
-  id: number;
-}
 
 interface AuthContextData {
   usuario: Usuario | null;
@@ -62,24 +54,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    // A sessão do Tutor não é restaurada ao reabrir o app: o token JWT dura
-    // só 2 minutos e não é persistido (ver client.ts), então qualquer sessão
-    // salva já estaria vencida. É preciso logar de novo a cada abertura, até
-    // o backend ganhar refresh token. Veterinário continua local (sem JWT).
-    async function carregarSessao() {
-      try {
-        const raw = await AsyncStorage.getItem(SESSAO_KEY);
-        if (!raw) return;
-
-        const sessao: SessaoArmazenada = JSON.parse(raw);
-        const veterinarios = await getVeterinarios();
-        const v = veterinarios.find((v) => v.idVeterinario === sessao.id);
-        if (v) setVeterinario(v);
-      } finally {
-        setCarregando(false);
-      }
-    }
-    carregarSessao();
+    // Nem Tutor nem Veterinário persistem sessão: os dois logam via JWT (2
+    // min de validade, sem refresh token, guardado só em memória — ver
+    // client.ts), então qualquer sessão salva já estaria vencida. É preciso
+    // logar de novo a cada abertura do app, até o backend ganhar refresh token.
+    setCarregando(false);
   }, []);
 
   // Login do Tutor consulta a API de verdade (POST /login, JWT assinado em
@@ -108,22 +87,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Mesmo fluxo do Tutor: login de verdade via POST /login (o backend resolve
+  // o papel — ROLE_TUTOR ou ROLE_PROFESSIONAL — pelo e-mail) e resolve o
+  // profissional logado via getProfessionalByEmail.
   const loginVeterinario = async (email: string, senha: string): Promise<boolean> => {
     const emailNormalizado = email.trim().toLowerCase();
     const senhaNormalizada = senha.trim();
-    const veterinarios = await getVeterinarios();
-    const v = veterinarios.find(
-      (v) => v.email.trim().toLowerCase() === emailNormalizado && v.senha.trim() === senhaNormalizada
-    );
-    if (!v) return false;
-    await AsyncStorage.setItem(SESSAO_KEY, JSON.stringify({ tipo: 'VETERINARIO', id: v.idVeterinario }));
-    setVeterinario(v);
-    return true;
+    try {
+      const { token } = await loginProfessional({ email: emailNormalizado, password: senhaNormalizada });
+      setAuthToken(token);
+
+      const profissional = await getProfessionalByEmail(emailNormalizado);
+      if (!profissional) {
+        setAuthToken(null);
+        return false;
+      }
+
+      setVeterinario(profissional);
+      return true;
+    } catch {
+      setAuthToken(null);
+      return false;
+    }
   };
 
   const logout = async () => {
     setAuthToken(null);
-    await AsyncStorage.removeItem(SESSAO_KEY);
     setUsuario(null);
     setVeterinario(null);
   };
