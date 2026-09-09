@@ -1,14 +1,6 @@
 // Tipos espelhando os DTOs/enums do PetPulse-Api (Spring Boot).
 // Fonte: PetPulse-Api/src/main/java/fiap/com/br/petpulse/{dto,enums}/**
 
-export interface SpringPage<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-}
-
 export type ApiSex = 'M' | 'F';
 
 export type ApiRecordType = 'VACINA' | 'CONSULTA' | 'DOENCA' | 'MEDICAMENTO' | 'OBSERVACAO' | 'EXAME';
@@ -59,6 +51,16 @@ export interface TutorResponse {
   createdAt: string;
 }
 
+// Formato de resposta paginada do GET /tutors — usado pra resolver o tutor
+// logado por e-mail (ver tutorApi.ts), já que o JWT não carrega o id.
+export interface TutorPaginado {
+  content: TutorResponse[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
 export interface TutorLoginRequest {
   email: string;
   password: string;
@@ -91,6 +93,16 @@ export interface ProfessionalResponse {
   createdAt: string;
 }
 
+// Formato de resposta paginada do GET /professionals — usado pra resolver o
+// veterinário logado por e-mail (ver professionalApi.ts).
+export interface ProfessionalPaginado {
+  content: ProfessionalResponse[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
 export interface TutorPhoneRequest {
   tutorId: number;
   phoneNumber: string;
@@ -100,6 +112,16 @@ export interface TutorPhoneResponse {
   id: number;
   tutorId: number;
   phoneNumber: string;
+}
+
+// Formato de resposta paginada do GET /tutor-phones — sem filtro por tutorId
+// na API, então filtramos no cliente (ver tutorPhoneApi.ts).
+export interface TutorPhonePaginado {
+  content: TutorPhoneResponse[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
 }
 
 // ── State / City (catálogo, "buscar ou cadastrar") ──────────────────────────
@@ -155,6 +177,16 @@ export interface TutorAddressResponse {
   neighborhood: string | null;
 }
 
+// Formato de resposta paginada do GET /tutor-addresses — sem filtro por
+// tutorId na API, então filtramos no cliente (ver tutorAddressApi.ts).
+export interface TutorAddressPaginado {
+  content: TutorAddressResponse[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
 // ── Pet Size (catálogo, só listagem) ────────────────────────────────────────
 
 export interface PetSizeResponse {
@@ -194,6 +226,16 @@ export interface PetResponse {
   createdAt: string;
 }
 
+// Formato de resposta paginada do GET /pets — sem filtro por tutorId na API,
+// então filtramos no cliente (ver petApi.ts / hooks/usePets.ts).
+export interface PetPaginado {
+  content: PetResponse[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
 // ── Clinical History ─────────────────────────────────────────────────────
 
 export interface ClinicalHistoryRequest {
@@ -217,6 +259,16 @@ export interface ClinicalHistoryResponse {
   recordDate: string;
   returnDate: string | null;
   observations: string | null;
+}
+
+// Formato de resposta paginada do GET /clinical-histories — sem filtro por
+// petId na API, então filtramos no cliente (ver hooks/useHistorico.ts).
+export interface ClinicalHistoryPaginado {
+  content: ClinicalHistoryResponse[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
 }
 
 // ── Smart Alert ──────────────────────────────────────────────────────────
@@ -243,4 +295,14 @@ export interface SmartAlertResponse {
   recommendation: string | null;
   generatedAt: string;
   status: ApiAlertStatus;
+}
+
+// Formato de resposta paginada do GET /smart-alerts — sem filtro por petId na
+// API, então filtramos no cliente (ver hooks/useAlertas.ts).
+export interface SmartAlertPaginado {
+  content: SmartAlertResponse[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
 }

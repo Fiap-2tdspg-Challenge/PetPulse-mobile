@@ -1,8 +1,8 @@
 import { apiFetch } from './client';
-import { SpringPage, TutorAddressRequest, TutorAddressResponse } from '../../types/types';
+import { TutorAddressPaginado, TutorAddressRequest, TutorAddressResponse } from '../../types/types';
 
 export async function getTutorAddressByTutorId(tutorId: number): Promise<TutorAddressResponse | undefined> {
-  const pagina = await apiFetch<SpringPage<TutorAddressResponse>>('/tutor-addresses?size=200');
+  const pagina = await apiFetch<TutorAddressPaginado>('/tutor-addresses?size=200');
   return pagina.content.find((e) => e.tutorId === tutorId);
 }
 

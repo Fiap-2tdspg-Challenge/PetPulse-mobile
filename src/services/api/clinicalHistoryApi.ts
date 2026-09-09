@@ -1,12 +1,12 @@
 import { apiFetch } from './client';
-import { ClinicalHistoryRequest, ClinicalHistoryResponse, SpringPage } from '../../types/types';
+import { ClinicalHistoryPaginado, ClinicalHistoryRequest, ClinicalHistoryResponse } from '../../types/types';
 
 // Sem filtro por petId em GET /clinical-histories hoje: busca uma página
 // grande e filtra no cliente (ver mappers.ts / hooks/useHistorico.ts).
 const PAGE_SIZE = 200;
 
 export async function getAllClinicalHistories(): Promise<ClinicalHistoryResponse[]> {
-  const page = await apiFetch<SpringPage<ClinicalHistoryResponse>>(`/clinical-histories?size=${PAGE_SIZE}`);
+  const page = await apiFetch<ClinicalHistoryPaginado>(`/clinical-histories?size=${PAGE_SIZE}`);
   return page.content;
 }
 

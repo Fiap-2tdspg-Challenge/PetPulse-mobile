@@ -1,12 +1,12 @@
 import { apiFetch } from './client';
-import { PetRequest, PetResponse, SpringPage } from '../../types/types';
+import { PetPaginado, PetRequest, PetResponse } from '../../types/types';
 
 // A API ainda não tem filtro por tutorId em GET /pets, então buscamos uma
 // página grande e filtramos no cliente (ver mappers.ts / hooks/usePets.ts).
 const PAGE_SIZE = 200;
 
 export async function getAllPets(): Promise<PetResponse[]> {
-  const page = await apiFetch<SpringPage<PetResponse>>(`/pets?size=${PAGE_SIZE}`);
+  const page = await apiFetch<PetPaginado>(`/pets?size=${PAGE_SIZE}`);
   return page.content;
 }
 

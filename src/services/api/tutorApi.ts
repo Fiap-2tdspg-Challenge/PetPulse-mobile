@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import { SpringPage, TokenResponse, TutorLoginRequest, TutorRequest, TutorResponse } from '../../types/types';
+import { TokenResponse, TutorLoginRequest, TutorPaginado, TutorRequest, TutorResponse } from '../../types/types';
 
 export function createTutor(request: TutorRequest): Promise<TutorResponse> {
   return apiFetch<TutorResponse>('/tutors', {
@@ -25,9 +25,14 @@ export function loginTutor(request: TutorLoginRequest): Promise<TokenResponse> {
   });
 }
 
-// SpringPage para paginação utilizada pelo backend. Do que eu conferi o TypeScript não saberia o formato da resposta virando UNKOWN podendo dar erro de compilação
+/**
+ * O JWT não carrega o id do tutor (só email e role), e não existe endpoint
+ * "/tutors/me" — então resolvemos o tutor logado buscando a listagem (já
+ * autenticada, GET /tutors exige role TUTOR) e filtrando pelo e-mail no
+ * cliente. Mesmo padrão de filtro client-side já usado pra pets/histórico.
+ */
 export async function getTutorByEmail(email: string): Promise<TutorResponse | undefined> {
-  const pagina = await apiFetch<SpringPage<TutorResponse>>('/tutors?size=200');
+  const pagina = await apiFetch<TutorPaginado>('/tutors?size=200');
   return pagina.content.find((t) => t.email.toLowerCase() === email.toLowerCase());
 }
 
