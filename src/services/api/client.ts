@@ -26,11 +26,10 @@ export class ApiError extends Error {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Token JWT (Bearer) da sessão atual. Só em memória — o token expira em 2
-// minutos (definido no backend, `TokenService`, sem refresh token ainda),
-// então não vale a pena persistir no AsyncStorage: ao reabrir o app ele já
-// estaria vencido de qualquer forma. `AuthContext` chama setAuthToken() no
-// login/logout.
+// Token JWT (Bearer) da sessão atual, guardado em memória. A persistência
+// entre aberturas do app (AsyncStorage) é responsabilidade do AuthContext,
+// que chama setAuthToken() no login/logout/restauração de sessão — aqui é
+// só o valor usado pra montar o header Authorization de cada chamada.
 // ─────────────────────────────────────────────────────────────────────────
 let authToken: string | null = null;
 
@@ -55,16 +54,15 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     });
   } catch {
     throw new ApiError(
-      `Não foi possível conectar à API em ${API_URL}. Verifique se o PetPulse-Api está rodando ` +
-        '(./mvnw spring-boot:run) e se o endereço configurado está correto.'
+      `Não foi possível conectar à API em ${API_URL}. Verifique se o PetPulse-Api está rodando `
     );
   }
 
   if (!resposta.ok) {
     let mensagem = `A API respondeu com erro (HTTP ${resposta.status}).`;
     if (resposta.status === 401 || resposta.status === 403) {
-      // O token JWT dura só 2 minutos (sem refresh token ainda) — o mais
-      // comum aqui é a sessão ter expirado no meio do uso, não credenciais erradas.
+      // O token JWT tem validade de 20 min e ainda não tem refresh token — o
+      // mais comum aqui é a sessão ter expirado, não credenciais erradas.
       mensagem = 'Sua sessão expirou. Faça login novamente.';
     } else {
       try {

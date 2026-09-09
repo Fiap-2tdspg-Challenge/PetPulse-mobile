@@ -42,7 +42,7 @@ Aplicativo mobile desenvolvido em **React Native + Expo** para gerenciamento com
 | Navegação | React Navigation v7 (Native Stack + Bottom Tabs) |
 | Busca/cache de dados | TanStack Query (`@tanstack/react-query`) |
 | Backend | API Java real — [PetPulse-Api](../PetPulse-Api) (Spring Boot) |
-| Persistência local | AsyncStorage `2.2.0` (instalado, mas sem uso ativo hoje — nem Tutor nem Veterinário persistem sessão) |
+| Persistência local | AsyncStorage `2.2.0` (guarda o token JWT da sessão — Tutor e Veterinário permanecem logados ao reabrir o app) |
 | Localização | expo-location `~19.0.8` |
 | Mapas | react-native-maps `1.20.1` |
 | Gradientes | expo-linear-gradient `~15.0.8` |
@@ -138,7 +138,7 @@ Tutor, Pets, Histórico Clínico e Alertas Inteligentes são todos lidos/gravado
 
 **Login do Tutor é JWT de verdade** (Spring Security + OAuth2 Resource Server, token RSA): `POST /login` devolve `{ token }`, e o app manda `Authorization: Bearer <token>` em toda chamada depois disso (ver `setAuthToken`/`apiFetch` em `src/services/api/client.ts`). Duas particularidades da implementação atual que o app precisa contornar:
 - **O token não carrega o id do tutor** (só e-mail e role) e a resposta do login também não devolve nada além do token. O app resolve isso buscando `GET /tutors?size=200` (já autenticado) e filtrando pelo e-mail no cliente — ver `getTutorByEmail` em `src/services/api/tutorApi.ts`.
-- **O token expira em 2 minutos**, sem refresh token. Por isso ele só é guardado em memória (nunca no AsyncStorage) — reabrir o app sempre exige logar de novo.
+- **O token expira em 20 minutos**, sem refresh token. Ele é persistido no AsyncStorage (`@petpulse:sessao`, junto com tipo de usuário e e-mail — nunca a senha), e restaurado ao abrir o app: `AuthContext` refaz `getTutorByEmail`/`getProfessionalByEmail` com o token salvo para remontar a sessão. Se o token já tiver expirado nesse momento, a chamada cai em 401 e o app volta pra tela de Login normalmente, limpando a sessão salva — ver `restaurarSessao` em `src/context/AuthContext.tsx`.
 
 Não existe cache local do Tutor: telefone (`GET /tutor-phones`) e endereço (`GET /tutor-addresses`) são buscados da API a cada login, filtrados por `tutorId` no cliente (mesmo padrão de filtro client-side usado pra pets/histórico/alertas) — ver `montarUsuario` em `src/context/AuthContext.tsx`. Isso evita qualquer risco de a cópia local ficar desatualizada em relação ao banco.
 
@@ -148,7 +148,7 @@ Espécie e Raça são digitadas livremente pelo tutor: o app resolve o texto par
 
 **Limitações conhecidas do backend atual** (não são bugs do mobile, são do estado atual da API):
 
-- **Token JWT de 2 minutos, sem refresh**: qualquer uso do app mais longo que isso vai gerar 401 no meio do caminho, exigindo logar de novo.
+- **Token JWT de 20 minutos, sem refresh**: qualquer uso do app mais longo que isso vai gerar 401 no meio do caminho, exigindo logar de novo. A sessão é persistida (ver acima), então isso só afeta uso contínuo — reabrir o app dentro da janela de 20 min não exige novo login.
 - **JWT sem o id do tutor**: contornado no cliente via `getTutorByEmail` (ver acima) — o ideal seria o token carregar um claim `id`.
 - **Sem filtro por tutor/pet nas listagens**: `GET /pets`, `GET /clinical-histories`, `GET /smart-alerts`, `GET /tutor-phones` e `GET /tutor-addresses` só paginam todos os registros (sem filtro por `tutorId`/`petId`). O app busca uma página grande (`size=200`) e filtra no cliente.
 - **Histórico Clínico sem profissional vinculado**: `professionalId` é opcional em `ClinicalHistoryRequest`, mas não existe endpoint de listagem de profissionais na API (mesma situação de Espécie/Raça antes do `POST /species`/`POST /breeds`). Por isso, o formulário de histórico no app não coleta profissional — os registros são criados sempre com `professionalId: null`. Quando a API ganhar um endpoint de profissionais, dá pra adicionar um seletor igual ao de Espécie/Raça.
@@ -166,7 +166,7 @@ https://www.figma.com/design/azNxLqmfQtd8EnDj1zAQfV/PetPulse?node-id=92-313&t=c9
 ---
 ## Dados de teste
 
-**Tutor**: não tem usuário de teste pré-semeado — crie uma conta pela tela de Cadastro (isso já cria o Tutor de verdade na API) e faça login com o e-mail/senha usados. Lembrando que o token expira em 2 minutos (ver [Integração com a API](#integração-com-a-api-petpulse-api)).
+**Tutor**: não tem usuário de teste pré-semeado — crie uma conta pela tela de Cadastro (isso já cria o Tutor de verdade na API) e faça login com o e-mail/senha usados. Lembrando que o token expira em 20 minutos (ver [Integração com a API](#integração-com-a-api-petpulse-api)).
 
 **Veterinário**: login também já é real (mesmo `POST /login`). Não tem tela de autocadastro — use um dos profissionais já semeados no banco (`PetPulseDB/03_CARGA.sql`, `PRC_CARGA_PROFISSIONAL`):
 

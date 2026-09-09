@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Usuario } from '../types/Usuario';
 import { Veterinario } from '../types/Veterinario';
 import { loginTutor, getTutorByEmail, deleteTutor } from '../services/api/tutorApi';
@@ -7,6 +8,14 @@ import { getTutorAddressByTutorId } from '../services/api/tutorAddressApi';
 import { loginProfessional, getProfessionalByEmail } from '../services/api/professionalApi';
 import { setAuthToken } from '../services/api/client';
 import { TutorResponse } from '../types/types';
+
+const SESSAO_KEY = '@petpulse:sessao';
+
+interface SessaoArmazenada {
+  token: string;
+  tipo: 'TUTOR' | 'VETERINARIO';
+  email: string;
+}
 
 interface AuthContextData {
   usuario: Usuario | null;
@@ -53,12 +62,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [veterinario, setVeterinario] = useState<Veterinario | null>(null);
   const [carregando, setCarregando] = useState(true);
 
+  // Restaura a sessão salva ao abrir o app: guarda só o token + e-mail (o
+  // suficiente pra buscar o perfil de novo na API), nunca a senha. Se o
+  // token já tiver expirado, a chamada abaixo cai no catch e o usuário
+  // simplesmente volta pra tela de Login — sem travar nem mostrar erro.
   useEffect(() => {
-    // Nem Tutor nem Veterinário persistem sessão: os dois logam via JWT (2
-    // min de validade, sem refresh token, guardado só em memória — ver
-    // client.ts), então qualquer sessão salva já estaria vencida. É preciso
-    // logar de novo a cada abertura do app, até o backend ganhar refresh token.
-    setCarregando(false);
+    async function restaurarSessao() {
+      try {
+        const raw = await AsyncStorage.getItem(SESSAO_KEY);
+        if (!raw) return;
+
+        const sessao: SessaoArmazenada = JSON.parse(raw);
+        setAuthToken(sessao.token);
+
+        if (sessao.tipo === 'TUTOR') {
+          const tutor = await getTutorByEmail(sessao.email);
+          if (!tutor) throw new Error('Tutor não encontrado');
+          setUsuario(await montarUsuario(tutor));
+        } else {
+          const profissional = await getProfessionalByEmail(sessao.email);
+          if (!profissional) throw new Error('Profissional não encontrado');
+          setVeterinario(profissional);
+        }
+      } catch {
+        setAuthToken(null);
+        await AsyncStorage.removeItem(SESSAO_KEY);
+      } finally {
+        setCarregando(false);
+      }
+    }
+    restaurarSessao();
   }, []);
 
   // Login do Tutor consulta a API de verdade (POST /login, JWT assinado em
@@ -80,6 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       setUsuario(await montarUsuario(tutor));
+      await AsyncStorage.setItem(SESSAO_KEY, JSON.stringify({ token, tipo: 'TUTOR', email: emailNormalizado }));
       return true;
     } catch {
       setAuthToken(null);
@@ -104,6 +138,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       setVeterinario(profissional);
+      await AsyncStorage.setItem(
+        SESSAO_KEY,
+        JSON.stringify({ token, tipo: 'VETERINARIO', email: emailNormalizado })
+      );
       return true;
     } catch {
       setAuthToken(null);
@@ -113,13 +151,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     setAuthToken(null);
+    await AsyncStorage.removeItem(SESSAO_KEY);
     setUsuario(null);
     setVeterinario(null);
   };
 
-  // Não persiste mais nada localmente: quem chama já fez as chamadas de API
-  // necessárias (PUT /tutors/{id}, POST/PUT /tutor-phones, /tutor-addresses)
-  // — aqui só atualiza o estado em memória com o resultado.
+  // Não persiste mais nada localmente além do token de sessão: quem chama já
+  // fez as chamadas de API necessárias (PUT /tutors/{id}, POST/PUT
+  // /tutor-phones, /tutor-addresses) — aqui só atualiza o estado em memória.
   const atualizarUsuario = async (dados: Usuario) => {
     setUsuario(dados);
   };
@@ -131,6 +170,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!usuario) return;
     await deleteTutor(usuario.id);
     setAuthToken(null);
+    await AsyncStorage.removeItem(SESSAO_KEY);
     setUsuario(null);
   };
 
