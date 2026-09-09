@@ -23,7 +23,7 @@ Aplicativo mobile desenvolvido em **React Native + Expo** para gerenciamento com
 
 ## Funcionalidades
 
-- **Autenticação** — Login e cadastro de usuário com sessão persistida via AsyncStorage.
+- **Autenticação** — Login do Tutor com JWT de verdade (Spring Security + OAuth2 Resource Server); login do Veterinário ainda local, temporário.
 - **Gerenciamento de pets** — Cadastro, edição e visualização de perfil completo (espécie, raça, peso, porte, sexo, castração).
 - **Histórico clínico** — Registro de vacinas, consultas, exames, medicações, cirurgias e outros eventos, com suporte a datas de retorno.
 - **Alertas inteligentes** — Notificações por nível de risco (BAIXO, MÉDIO, ALTO, CRÍTICO) geradas por IoT, pelo sistema ou manualmente.
@@ -42,13 +42,13 @@ Aplicativo mobile desenvolvido em **React Native + Expo** para gerenciamento com
 | Navegação | React Navigation v7 (Native Stack + Bottom Tabs) |
 | Busca/cache de dados | TanStack Query (`@tanstack/react-query`) |
 | Backend | API Java real — [PetPulse-Api](../PetPulse-Api) (Spring Boot) |
-| Persistência local (legado) | AsyncStorage `2.2.0` |
+| Persistência local (só Veterinário) | AsyncStorage `2.2.0` |
 | Localização | expo-location `~19.0.8` |
 | Mapas | react-native-maps `1.20.1` |
 | Gradientes | expo-linear-gradient `~15.0.8` |
 | Ícones | @expo/vector-icons `^15.1.1` |
 
-> **Nota sobre a camada de dados**: Pets, Histórico Clínico e Alertas Inteligentes agora vêm de verdade da **PetPulse-Api** (Spring Boot), via `src/services/api/` + hooks em `src/hooks/` (TanStack Query). `src/services/storage.ts` e `src/mocks/` continuam no repositório como referência/fallback, mas não são mais chamados pelos hooks. Login/Cadastro de sessão continuam locais (AsyncStorage) — veja [Integração com a API](#integração-com-a-api-petpulse-api) para detalhes e limitações conhecidas.
+> **Nota sobre a camada de dados**: Tutor (perfil, telefone, endereço), Pets, Histórico Clínico e Alertas Inteligentes vêm todos de verdade da **PetPulse-Api** (Spring Boot), via `src/services/api/` + hooks em `src/hooks/` (TanStack Query) — sem cache local: cada login busca tudo de novo da API, então nunca existe uma cópia desatualizada em relação ao banco. `src/services/storage.ts` (AsyncStorage) cuida só do login local do Veterinário (temporário, até esse perfil ganhar JWT também). Veja [Integração com a API](#integração-com-a-api-petpulse-api) para detalhes.
 
 ---
 
@@ -80,7 +80,7 @@ PetPulse-mobile/
 │   │   └── localizaPet/
 │   ├── services/
 │   │   ├── api/             # Client HTTP + DTOs + mappers para a PetPulse-Api
-│   │   ├── storage.ts       # Camada de acesso ao AsyncStorage (referência/fallback)
+│   │   ├── storage.ts       # AsyncStorage — só o login local do Veterinário
 │   │   └── queryClient.ts   # Instância do QueryClient do TanStack Query
 │   ├── theme/
 │   │   └── cores.ts         # Paleta de cores e gradientes
@@ -133,15 +133,23 @@ npm run web        # Web (experimental)
 
 ## Integração com a API (PetPulse-Api)
 
-Pets, Histórico Clínico e Alertas Inteligentes são lidos/gravados na API Java real (`PetPulse-Api`, Spring Boot), via `src/services/api/`. Login/Cadastro de sessão continuam locais (AsyncStorage) — a API não tem endpoint de autenticação hoje (`TutorResponse` nem devolve senha), então isso fica para uma etapa futura (Firebase Auth ou um endpoint de login na API).
+Tutor, Pets, Histórico Clínico e Alertas Inteligentes são todos lidos/gravados na API Java real (`PetPulse-Api`, Spring Boot), via `src/services/api/`.
 
-Ao criar uma conta, o app cria a sessão local **e** um Tutor real via `POST /tutors`, guardando o `tutorId` retornado. Esse `tutorId` é o que vincula os pets do usuário aos dados reais da API.
+**Login do Tutor é JWT de verdade** (Spring Security + OAuth2 Resource Server, token RSA): `POST /login` devolve `{ token }`, e o app manda `Authorization: Bearer <token>` em toda chamada depois disso (ver `setAuthToken`/`apiFetch` em `src/services/api/client.ts`). Duas particularidades da implementação atual que o app precisa contornar:
+- **O token não carrega o id do tutor** (só e-mail e role) e a resposta do login também não devolve nada além do token. O app resolve isso buscando `GET /tutors?size=200` (já autenticado) e filtrando pelo e-mail no cliente — ver `getTutorByEmail` em `src/services/api/tutorApi.ts`.
+- **O token expira em 2 minutos**, sem refresh token. Por isso ele só é guardado em memória (nunca no AsyncStorage) — reabrir o app sempre exige logar de novo.
+
+Não existe cache local do Tutor: telefone (`GET /tutor-phones`) e endereço (`GET /tutor-addresses`) são buscados da API a cada login, filtrados por `tutorId` no cliente (mesmo padrão de filtro client-side usado pra pets/histórico/alertas) — ver `montarUsuario` em `src/context/AuthContext.tsx`. Isso evita qualquer risco de a cópia local ficar desatualizada em relação ao banco.
+
+Ao criar uma conta, o Cadastro cria o Tutor via `POST /tutors` (esse endpoint é público) e, em seguida, faz um login "por baixo dos panos" só pra conseguir um token válido e completar o cadastro de telefone e endereço (que já exigem token) — esse token é descartado logo depois; o login "de verdade" acontece na tela de Login.
 
 Espécie e Raça são digitadas livremente pelo tutor: o app resolve o texto para um id real via `POST /species` e `POST /breeds` na API (endpoints "buscar ou cadastrar" — retornam o registro existente com esse nome, ou criam um novo na hora), antes de enviar o cadastro/edição do pet. Porte vem de `GET /pet-sizes` (catálogo fixo, só leitura — não é "buscar ou cadastrar" como Espécie/Raça, já que os valores são um enum fechado). Ver `src/hooks/useCatalogoPet.ts`.
 
 **Limitações conhecidas do backend atual** (não são bugs do mobile, são do estado atual da API):
 
-- **Sem filtro por tutor/pet nas listagens**: `GET /pets`, `GET /clinical-histories` e `GET /smart-alerts` só paginam todos os registros (sem filtro por `tutorId`/`petId`). O app busca uma página grande (`size=200`) e filtra no cliente — ver `src/hooks/usePets.ts`, `useHistorico.ts`, `useAlertas.ts`.
+- **Token JWT de 2 minutos, sem refresh**: qualquer uso do app mais longo que isso vai gerar 401 no meio do caminho, exigindo logar de novo.
+- **JWT sem o id do tutor**: contornado no cliente via `getTutorByEmail` (ver acima) — o ideal seria o token carregar um claim `id`.
+- **Sem filtro por tutor/pet nas listagens**: `GET /pets`, `GET /clinical-histories`, `GET /smart-alerts`, `GET /tutor-phones` e `GET /tutor-addresses` só paginam todos os registros (sem filtro por `tutorId`/`petId`). O app busca uma página grande (`size=200`) e filtra no cliente.
 - **Histórico Clínico sem profissional vinculado**: `professionalId` é opcional em `ClinicalHistoryRequest`, mas não existe endpoint de listagem de profissionais na API (mesma situação de Espécie/Raça antes do `POST /species`/`POST /breeds`). Por isso, o formulário de histórico no app não coleta profissional — os registros são criados sempre com `professionalId: null`. Quando a API ganhar um endpoint de profissionais, dá pra adicionar um seletor igual ao de Espécie/Raça.
 
 ---
@@ -157,14 +165,11 @@ https://www.figma.com/design/azNxLqmfQtd8EnDj1zAQfV/PetPulse?node-id=92-313&t=c9
 ---
 ## Dados de teste
 
-Login/Cadastro continuam locais: na primeira execução, o app semeia o AsyncStorage com um usuário de teste pronto para uso:
+**Tutor**: não tem usuário de teste pré-semeado — crie uma conta pela tela de Cadastro (isso já cria o Tutor de verdade na API) e faça login com o e-mail/senha usados. Lembrando que o token expira em 2 minutos (ver [Integração com a API](#integração-com-a-api-petpulse-api)).
 
-| Campo | Valor |
-|---|---|
-| E-mail | definido em `src/mocks/usuario.ts` |
-| Senha | definida em `src/mocks/usuario.ts` |
+**Veterinário**: login continua local/mock — dados de teste em `src/mocks/veterinario.ts`, semeados no `AsyncStorage` na primeira execução via `seedStorage()` (`src/services/storage.ts`).
 
-Pets, Histórico Clínico e Alertas Inteligentes **não** vêm mais desses mocks — são lidos da API real (`PetPulse-Api`, rodando localmente). Os arquivos em `src/mocks/` continuam no repositório só como referência.
+Pets, Histórico Clínico e Alertas Inteligentes são sempre lidos da API real (`PetPulse-Api`, rodando localmente) — os arquivos em `src/mocks/` (exceto `veterinario.ts`) continuam no repositório só como referência.
 
 ---
 
@@ -189,8 +194,10 @@ Pets, Histórico Clínico e Alertas Inteligentes **não** vêm mais desses mocks
 
 ### Usuario
 ```ts
-{ idUsuario, nome, cpf, email, senha, telefone, endereco, dtCadastro, tutorId? }
-// tutorId: id do Tutor correspondente na PetPulse-Api (preenchido no Cadastro)
+// Extends TutorResponse da API (id, name, cpf, email, createdAt) + campos que
+// a API guarda em endpoints separados, buscados no login (sem cache local):
+{ id, name, cpf, email, createdAt, telefone, endereco, numero, complemento, cep, bairro, cidade, estado, phoneId?, enderecoId? }
+// phoneId/enderecoId: ids do TutorPhone/TutorAddress na API, quando existem
 ```
 
 ### Pet

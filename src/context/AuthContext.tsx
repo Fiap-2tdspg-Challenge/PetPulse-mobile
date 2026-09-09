@@ -2,14 +2,17 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Usuario } from '../types/Usuario';
 import { Veterinario } from '../types/Veterinario';
-import { getUsuarios, getVeterinarios, salvarUsuarioLocal, removerUsuarioLocal } from '../services/storage';
-import { loginTutor, deleteTutor } from '../services/api/tutorApi';
+import { getVeterinarios } from '../services/storage';
+import { loginTutor, getTutorByEmail, deleteTutor } from '../services/api/tutorApi';
+import { getTutorPhoneByTutorId } from '../services/api/tutorPhoneApi';
+import { getTutorAddressByTutorId } from '../services/api/tutorAddressApi';
+import { setAuthToken } from '../services/api/client';
+import { TutorResponse } from '../types/types';
 
 const SESSAO_KEY = '@petpulse:sessao';
 
-type TipoSessao = 'TUTOR' | 'VETERINARIO';
 interface SessaoArmazenada {
-  tipo: TipoSessao;
+  tipo: 'VETERINARIO';
   id: number;
 }
 
@@ -26,27 +29,52 @@ interface AuthContextData {
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
+/**
+ * Monta o Usuario completo combinando o Tutor com telefone/endereço, buscados
+ * direto da API (GET /tutor-phones e /tutor-addresses, filtrados por tutorId
+ * no cliente — a API não tem esse filtro). Sem cache local: cada login busca
+ * tudo de novo, então nunca existe uma cópia desatualizada em relação ao banco.
+ */
+async function montarUsuario(tutor: TutorResponse): Promise<Usuario> {
+  const [fone, endereco] = await Promise.all([
+    getTutorPhoneByTutorId(tutor.id),
+    getTutorAddressByTutorId(tutor.id),
+  ]);
+
+  return {
+    ...tutor,
+    telefone: fone?.phoneNumber ?? '',
+    phoneId: fone?.id,
+    endereco: endereco?.address ?? '',
+    numero: endereco?.number ?? '',
+    complemento: endereco?.complement ?? '',
+    cep: endereco?.zipCode ?? '',
+    bairro: endereco?.neighborhood ?? '',
+    cidade: endereco?.cityName ?? '',
+    estado: endereco?.stateCode ?? '',
+    enderecoId: endereco?.id,
+  };
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [veterinario, setVeterinario] = useState<Veterinario | null>(null);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
+    // A sessão do Tutor não é restaurada ao reabrir o app: o token JWT dura
+    // só 2 minutos e não é persistido (ver client.ts), então qualquer sessão
+    // salva já estaria vencida. É preciso logar de novo a cada abertura, até
+    // o backend ganhar refresh token. Veterinário continua local (sem JWT).
     async function carregarSessao() {
       try {
         const raw = await AsyncStorage.getItem(SESSAO_KEY);
         if (!raw) return;
 
         const sessao: SessaoArmazenada = JSON.parse(raw);
-        if (sessao.tipo === 'VETERINARIO') {
-          const veterinarios = await getVeterinarios();
-          const v = veterinarios.find((v) => v.idVeterinario === sessao.id);
-          if (v) setVeterinario(v);
-        } else {
-          const usuarios = await getUsuarios();
-          const u = usuarios.find((u) => u.id === sessao.id);
-          if (u) setUsuario(u);
-        }
+        const veterinarios = await getVeterinarios();
+        const v = veterinarios.find((v) => v.idVeterinario === sessao.id);
+        if (v) setVeterinario(v);
       } finally {
         setCarregando(false);
       }
@@ -54,41 +82,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     carregarSessao();
   }, []);
 
-  // Login do Tutor consulta a API de verdade (POST /tutors/login) — ainda é
-  // provisório (sem hash de senha, sem token), mas já valida contra o banco
-  // em vez de comparar só localmente. A cópia local (AsyncStorage) é
-  // reconciliada depois, pra manter campos que a API não tem (telefone,
-  // endereço) e permitir restaurar a sessão sem a API no ar.
+  // Login do Tutor consulta a API de verdade (POST /login, JWT assinado em
+  // RSA). A resposta só traz o token — sem id/nome/e-mail do tutor, e o JWT
+  // também não carrega o id (só e-mail e role) — então resolvemos o tutor
+  // logado com getTutorByEmail (busca a listagem já autenticada e filtra no
+  // cliente), e telefone/endereço direto da API também (sem cache local).
   const login = async (email: string, senha: string): Promise<boolean> => {
     const emailNormalizado = email.trim().toLowerCase();
     const senhaNormalizada = senha.trim();
     try {
-      const tutor = await loginTutor({ email: emailNormalizado, password: senhaNormalizada });
+      const { token } = await loginTutor({ email: emailNormalizado, password: senhaNormalizada });
+      setAuthToken(token);
 
-      // Reconcilia com a cópia local, que guarda campos que a API não tem
-      // (telefone, endereço) — cria a cópia se ainda não existir (ex: conta
-      // criada direto na API/Swagger).
-      const usuarios = await getUsuarios();
-      const existente = usuarios.find((u) => u.id === tutor.id);
-      const usuarioLocal: Usuario = {
-        ...tutor,
-        telefone: existente?.telefone ?? '',
-        endereco: existente?.endereco ?? '',
-        numero: existente?.numero ?? '',
-        complemento: existente?.complemento ?? '',
-        cep: existente?.cep ?? '',
-        bairro: existente?.bairro ?? '',
-        cidade: existente?.cidade ?? '',
-        estado: existente?.estado ?? '',
-        phoneId: existente?.phoneId,
-        enderecoId: existente?.enderecoId,
-      };
-      await salvarUsuarioLocal(usuarioLocal);
+      const tutor = await getTutorByEmail(emailNormalizado);
+      if (!tutor) {
+        setAuthToken(null);
+        return false;
+      }
 
-      await AsyncStorage.setItem(SESSAO_KEY, JSON.stringify({ tipo: 'TUTOR', id: usuarioLocal.id }));
-      setUsuario(usuarioLocal);
+      setUsuario(await montarUsuario(tutor));
       return true;
     } catch {
+      setAuthToken(null);
       return false;
     }
   };
@@ -107,13 +122,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
+    setAuthToken(null);
     await AsyncStorage.removeItem(SESSAO_KEY);
     setUsuario(null);
     setVeterinario(null);
   };
 
+  // Não persiste mais nada localmente: quem chama já fez as chamadas de API
+  // necessárias (PUT /tutors/{id}, POST/PUT /tutor-phones, /tutor-addresses)
+  // — aqui só atualiza o estado em memória com o resultado.
   const atualizarUsuario = async (dados: Usuario) => {
-    await salvarUsuarioLocal(dados);
     setUsuario(dados);
   };
 
@@ -123,8 +141,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const excluirConta = async () => {
     if (!usuario) return;
     await deleteTutor(usuario.id);
-    await removerUsuarioLocal(usuario.id);
-    await AsyncStorage.removeItem(SESSAO_KEY);
+    setAuthToken(null);
     setUsuario(null);
   };
 

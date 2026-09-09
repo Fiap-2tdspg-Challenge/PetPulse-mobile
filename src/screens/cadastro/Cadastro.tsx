@@ -17,13 +17,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
-import { salvarUsuarioLocal } from "../../services/storage";
 import { useCreateTutor, useCreateTutorPhone, useFindOrCreateState, useFindOrCreateCity, useCreateTutorAddress } from "../../hooks/useTutor";
 import { nomeEstado } from "../../constants/estadosBrasil";
+import { loginTutor } from "../../services/api/tutorApi";
+import { setAuthToken } from "../../services/api/client";
 
-// Tipo de endereço não é escolhido pelo tutor no app: T_CLY_TIPO_ENDERECO só
-// tem Residencial/Comercial semeados e o app cadastra sempre um único
-// endereço (residencial) por tutor.
+
 const ADDRESS_TYPE_ID_RESIDENCIAL = 1;
 
 export const Cadastro = () => {
@@ -102,19 +101,20 @@ export const Cadastro = () => {
     if (!validar()) return;
 
     const { nome, cpf, telefone, endereco, numero, complemento, cep, bairro, cidade } = form;
-    const email = form.email.trim();
+    const email = form.email.trim().toLowerCase();
     const senha = form.senha.trim();
     const estado = form.estado.trim().toUpperCase();
     setCarregando(true);
     try {
-      // O Tutor é criado direto na API — sem isso, login não funciona
-      // (POST /tutors/login consulta o banco de verdade).
       const tutor = await criarTutor.mutateAsync({ name: nome, cpf, email, password: senha });
-      const fone = await criarTelefone.mutateAsync({ tutorId: tutor.id, phoneNumber: telefone });
+      const { token } = await loginTutor({ email, password: senha });
+      setAuthToken(token);
+
+      await criarTelefone.mutateAsync({ tutorId: tutor.id, phoneNumber: telefone });
 
       const estadoResolvido = await resolverEstado.mutateAsync({ code: estado, name: nomeEstado(estado) });
       const cidadeResolvida = await resolverCidade.mutateAsync({ name: cidade, stateCode: estadoResolvido.code });
-      const enderecoApi = await criarEndereco.mutateAsync({
+      await criarEndereco.mutateAsync({
         tutorId: tutor.id,
         addressTypeId: ADDRESS_TYPE_ID_RESIDENCIAL,
         cityId: cidadeResolvida.id,
@@ -125,27 +125,17 @@ export const Cadastro = () => {
         neighborhood: bairro,
       });
 
-      await salvarUsuarioLocal({
-        ...tutor,
-        telefone,
-        endereco,
-        numero,
-        complemento,
-        cep,
-        bairro,
-        cidade,
-        estado,
-        phoneId: fone.id,
-        enderecoId: enderecoApi.id,
-      });
+
+      setAuthToken(null);
 
       Alert.alert('Sucesso', 'Conta criada com sucesso!', [
         { text: 'OK', onPress: () => navigation.navigate('Login' as never) },
       ]);
     } catch {
+      setAuthToken(null);
       Alert.alert(
         'Não foi possível criar a conta',
-        'Não foi possível conectar à API (ou o e-mail/CPF já está em uso). Verifique se ela está no ar (./mvnw spring-boot:run) e tente novamente.'
+        'Não foi possível conectar ou o e-mail, tente novamente.'
       );
     } finally {
       setCarregando(false);

@@ -64,6 +64,11 @@ export interface TutorLoginRequest {
   password: string;
 }
 
+// Resposta de POST /login (AuthController) — só o token, sem dados do tutor. 
+export interface TokenResponse {
+  token: string;
+}
+
 export interface TutorPhoneRequest {
   tutorId: number;
   phoneNumber: string;

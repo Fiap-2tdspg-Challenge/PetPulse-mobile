@@ -114,7 +114,9 @@ export const EditaPerfil = () => {
     setCarregando(true);
     try {
       const nome = form.nome.trim();
-      const email = form.email.trim();
+      // Sempre minúsculo — mesmo motivo do Cadastro: o login busca o e-mail
+      // normalizado assim, e a busca é sensível a maiúsculas/minúsculas.
+      const email = form.email.trim().toLowerCase();
       const cpf = form.cpf.replace(/\D/g, "");
       const telefone = form.telefone.replace(/\D/g, "");
       const endereco = form.endereco.trim();

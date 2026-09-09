@@ -25,12 +25,33 @@ export class ApiError extends Error {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Token JWT (Bearer) da sessão atual. Só em memória — o token expira em 2
+// minutos (definido no backend, `TokenService`, sem refresh token ainda),
+// então não vale a pena persistir no AsyncStorage: ao reabrir o app ele já
+// estaria vencido de qualquer forma. `AuthContext` chama setAuthToken() no
+// login/logout.
+// ─────────────────────────────────────────────────────────────────────────
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+}
+
+export function getAuthToken(): string | null {
+  return authToken;
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   let resposta: Response;
   try {
     resposta = await fetch(`${API_URL}${path}`, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        ...init?.headers,
+      },
     });
   } catch {
     throw new ApiError(
@@ -41,11 +62,17 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
   if (!resposta.ok) {
     let mensagem = `A API respondeu com erro (HTTP ${resposta.status}).`;
-    try {
-      const corpo = await resposta.json();
-      if (corpo?.message) mensagem = corpo.message;
-    } catch {
-      // corpo não era JSON, mantém a mensagem genérica
+    if (resposta.status === 401 || resposta.status === 403) {
+      // O token JWT dura só 2 minutos (sem refresh token ainda) — o mais
+      // comum aqui é a sessão ter expirado no meio do uso, não credenciais erradas.
+      mensagem = 'Sua sessão expirou. Faça login novamente.';
+    } else {
+      try {
+        const corpo = await resposta.json();
+        if (corpo?.message) mensagem = corpo.message;
+      } catch {
+        // corpo não era JSON, mantém a mensagem genérica
+      }
     }
     throw new ApiError(mensagem, resposta.status);
   }

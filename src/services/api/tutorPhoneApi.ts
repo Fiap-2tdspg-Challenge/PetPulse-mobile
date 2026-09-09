@@ -1,5 +1,11 @@
 import { apiFetch } from './client';
-import { TutorPhoneRequest, TutorPhoneResponse } from '../../types/types';
+import { SpringPage, TutorPhoneRequest, TutorPhoneResponse } from '../../types/types';
+
+/** Não existe filtro por tutorId na API — busca uma página grande e filtra no cliente (mesmo padrão de pets/histórico). */
+export async function getTutorPhoneByTutorId(tutorId: number): Promise<TutorPhoneResponse | undefined> {
+  const pagina = await apiFetch<SpringPage<TutorPhoneResponse>>('/tutor-phones?size=200');
+  return pagina.content.find((f) => f.tutorId === tutorId);
+}
 
 export function createTutorPhone(request: TutorPhoneRequest): Promise<TutorPhoneResponse> {
   return apiFetch<TutorPhoneResponse>('/tutor-phones', {
