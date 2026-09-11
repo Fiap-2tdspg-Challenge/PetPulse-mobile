@@ -189,9 +189,9 @@ https://www.figma.com/design/azNxLqmfQtd8EnDj1zAQfV/PetPulse?node-id=92-313&t=c9
 
 | E-mail | Senha |
 |---|---|
-| `carlos.andrade@vetcare.com` | `vet123` |
-| `fernanda.lima@vetcare.com` | `vet456` |
-| `roberto.souza@petsaude.com` | `vet789` |
+| `carlos.andrade@vetcare.com` | `123456` |
+| `fernanda.lima@vetcare.com` | `123456` |
+| `roberto.souza@petsaude.com` | `123456` |
 
 Todos os dados (Tutor, Veterinário, Pets, Histórico Clínico, Alertas Inteligentes) vêm sempre da API real (`PetPulse-Api`, hospedada no Render).
 
