@@ -16,8 +16,7 @@ import { cores } from "../../theme/cores"
 import { usePets } from "../../hooks/usePets"
 import { useAuth } from "../../context/AuthContext"
 import { Footer } from "../../components/Footer"
-
-const GOOGLE_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? ""
+import { buscarEnderecoReverso } from "../../services/geocodingApi"
 
 export const LocalizaPet = () => {
     const { usuario } = useAuth()
@@ -41,19 +40,8 @@ export const LocalizaPet = () => {
             500
         )
 
-        try {
-            const res = await fetch(
-                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_KEY}&language=pt-BR`
-            )
-            const data = await res.json()
-            if (data.status === "OK" && data.results.length > 0) {
-                setAddress(data.results[0].formatted_address)
-            } else {
-                setAddress(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`)
-            }
-        } catch {
-            setAddress(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`)
-        }
+        const endereco = await buscarEnderecoReverso(latitude, longitude)
+        setAddress(endereco ?? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`)
     }
 
     const startTracking = async () => {

@@ -20,6 +20,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useCreateHistorico, useUpdateHistorico } from "../../hooks/useHistorico";
 import { ApiRecordType, ClinicalHistoryResponse } from "../../types/types";
 import { ApiError } from "../../services/api/client";
+import { isoParaDisplay, displayParaISO, mascararDataDigitada } from "../../utils/datas";
 
 const CATEGORIAS: Array<{ tipo: ApiRecordType; label: string }> = [
   { tipo: "VACINA", label: "Vacina" },
@@ -29,16 +30,6 @@ const CATEGORIAS: Array<{ tipo: ApiRecordType; label: string }> = [
   { tipo: "DOENCA", label: "Doença" },
   { tipo: "OBSERVACAO", label: "Observação" },
 ];
-
-function isoParaDisplay(iso: string): string {
-  const [ano, mes, dia] = iso.split("-");
-  return `${dia}/${mes}/${ano}`;
-}
-
-function displayParaISO(display: string): string {
-  const [dia, mes, ano] = display.split("/");
-  return `${ano}-${mes}-${dia}`;
-}
 
 export const CadastraHistorico = () => {
   const navigation = useNavigation();
@@ -65,13 +56,7 @@ export const CadastraHistorico = () => {
     setErros((prev) => ({ ...prev, [campo]: "" }));
   };
 
-  const mascararData = (valor: string) => {
-    const numeros = valor.replace(/\D/g, "").slice(0, 8);
-    let resultado = numeros;
-    if (numeros.length > 2) resultado = numeros.slice(0, 2) + "/" + numeros.slice(2);
-    if (numeros.length > 4) resultado = numeros.slice(0, 2) + "/" + numeros.slice(2, 4) + "/" + numeros.slice(4);
-    atualizar("dtRetorno", resultado);
-  };
+  const mascararData = (valor: string) => atualizar("dtRetorno", mascararDataDigitada(valor));
 
   const validar = (): boolean => {
     const novosErros: Partial<Record<"descricao" | "dtRetorno", string>> = {};

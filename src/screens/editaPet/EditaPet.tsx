@@ -19,16 +19,7 @@ import { PawBackground } from "../../components/PawBackground";
 import { useUpdatePet } from "../../hooks/usePets";
 import { useFindOrCreateSpecies, useFindOrCreateBreed, usePetSizes } from "../../hooks/useCatalogoPet";
 import { ApiSex, PetResponse } from "../../types/types";
-
-function isoParaDisplay(iso: string): string {
-  const [ano, mes, dia] = iso.split("-");
-  return `${dia}/${mes}/${ano}`;
-}
-
-function displayParaISO(display: string): string {
-  const [dia, mes, ano] = display.split("/");
-  return `${ano}-${mes}-${dia}`;
-}
+import { isoParaDisplay, displayParaISO, mascararDataDigitada } from "../../utils/datas";
 
 export const EditaPet = () => {
   const navigation = useNavigation();
@@ -59,14 +50,7 @@ export const EditaPet = () => {
     setErros((prev) => ({ ...prev, [campo]: "" }));
   };
 
-  const mascararData = (valor: string) => {
-    const numeros = valor.replace(/\D/g, "").slice(0, 8);
-    let resultado = numeros;
-    if (numeros.length > 2) resultado = numeros.slice(0, 2) + "/" + numeros.slice(2);
-    if (numeros.length > 4)
-      resultado = numeros.slice(0, 2) + "/" + numeros.slice(2, 4) + "/" + numeros.slice(4);
-    atualizar("dtNascimento", resultado);
-  };
+  const mascararData = (valor: string) => atualizar("dtNascimento", mascararDataDigitada(valor));
 
   const validar = (): boolean => {
     const novosErros: Partial<Record<keyof typeof form, string>> = {};

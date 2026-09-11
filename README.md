@@ -37,10 +37,11 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 - **Autenticação** — Login do Tutor e do Veterinário com JWT de verdade (Spring Security + OAuth2 Resource Server, mesmo `POST /login` pros dois — o backend resolve o papel pelo e-mail).
 - **Gerenciamento de pets** — Cadastro, edição e visualização de perfil completo (espécie, raça, peso, porte, sexo, castração).
 - **Histórico clínico** — Registro de vacinas, consultas, exames, medicações, cirurgias e outros eventos, com suporte a datas de retorno.
-- **Alertas inteligentes** — Notificações por nível de risco (BAIXO, MÉDIO, ALTO, CRÍTICO) geradas por IoT, pelo sistema ou manualmente.
+- **Alertas inteligentes** — Notificações por nível de risco (BAIXO, MÉDIO, ALTO), geradas automaticamente a partir de leituras IoT fora da faixa esperada, pelo histórico clínico, pelo sistema ou manualmente.
 - **Localização do pet** — Rastreamento GPS em tempo real com mapa interativo (Google Maps) e endereço reverso.
 - **Dispositivo IoT** — Exibição de dados do sensor: frequência cardíaca, nível de atividade, pressão e status do dispositivo.
-- **Perfil do usuário** — Visualização e edição de dados pessoais.
+- **Perfil do usuário** — Visualização, edição e exclusão de conta.
+- **Painel do Veterinário** — Login próprio, busca de pets por nome/tutor e histórico clínico (visualização e cadastro de novos registros).
 
 ---
 
@@ -69,12 +70,12 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 PetPulse-mobile/
 ├── App.tsx                  # Ponto de entrada — providers e navegação raiz
 ├── src/
-│   ├── components/          # Componentes reutilizáveis (Footer, PawBackground)
+│   ├── components/          # Componentes reutilizáveis (Footer, PawBackground, Sparkline)
 │   ├── constants/
 │   │   └── estadosBrasil.ts # Nomes das UFs (usado só para o POST /states, não é catálogo hardcoded de negócio)
 │   ├── context/
-│   │   └── AuthContext.tsx  # Contexto de autenticação
-│   ├── hooks/                # Hooks de dados (TanStack Query) — usePets, useHistorico, useAlertas, useTutor
+│   │   └── AuthContext.tsx  # Contexto de autenticação (Tutor e Veterinário) e persistência de sessão
+│   ├── hooks/                # Hooks de dados (TanStack Query) — usePets, useHistorico, useAlertas, useTutor, useCatalogoPet
 │   ├── routes/
 │   │   └── Routes.tsx       # Definição das rotas (Tutor / Veterinário / não autenticado)
 │   ├── screens/             # Telas da aplicação (somente UI, sem lógica de dados)
@@ -87,17 +88,22 @@ PetPulse-mobile/
 │   │   ├── editaPet/
 │   │   ├── perfilPet/
 │   │   ├── historicoClinico/
-│   │   ├── cadastraHistorico/
+│   │   ├── cadastraHistorico/    # Compartilhada entre Tutor e Veterinário
 │   │   ├── localizaPet/
 │   │   ├── coleira/
-│   │   └── painelVeterinario/ # Painel do Veterinário (login real; demais funcionalidades ainda não implementadas)
+│   │   ├── painelVeterinario/    # Painel do Veterinário: busca de pets por nome/tutor
+│   │   └── historicoPetVeterinario/ # Histórico clínico do pet, visto pelo Veterinário
 │   ├── services/
 │   │   ├── api/             # Client HTTP + DTOs para a PetPulse-Api (inclui token JWT, ver client.ts)
+│   │   ├── coleiraApi.ts    # Serviço externo (dispositivo IoT/coleira, fora da PetPulse-Api)
+│   │   ├── geocodingApi.ts  # Serviço externo (Google Geocoding — endereço reverso)
 │   │   └── queryClient.ts   # Instância do QueryClient do TanStack Query
 │   ├── theme/
 │   │   └── cores.ts         # Paleta de cores e gradientes
 │   ├── types/               # Interfaces TypeScript dos modelos de domínio
-│   └── utils/                # Funções puras de regra de negócio (ex: cálculo de lembretes)
+│   └── utils/                # Funções puras de regra de negócio
+│       ├── datas.ts         # Conversão/máscara de datas (DD/MM/AAAA ↔ ISO), usado nos formulários
+│       └── lembretes.ts     # Cálculo do próximo retorno clínico
 └── android/ ios/            # Projetos nativos gerados pelo Expo
 ```
 
@@ -195,16 +201,20 @@ Todos os dados (Tutor, Veterinário, Pets, Histórico Clínico, Alertas Intelige
 
 | Tela | Descrição |
 |---|---|
-| **Login** | Autenticação com e-mail e senha |
-| **Cadastro** | Criação de nova conta |
+| **Login** | Autenticação com e-mail e senha (Tutor ou Veterinário) |
+| **Cadastro** | Criação de nova conta de Tutor |
 | **Home** | Dashboard com pets, alertas pendentes e próximos retornos |
-| **Perfil** | Dados pessoais do usuário logado |
+| **Perfil** | Dados pessoais do usuário logado, com opção de excluir a conta |
 | **Edita Perfil** | Atualização dos dados do usuário |
 | **Cadastra Pet** | Formulário de novo pet |
 | **Perfil Pet** | Detalhes do pet com dados IoT |
 | **Edita Pet** | Atualização dos dados do pet |
-| **Histórico Clínico** | Lista de registros filtráveis por categoria |
+| **Histórico Clínico** | Lista de registros filtráveis por categoria (visão do Tutor) |
+| **Cadastra Histórico** | Formulário de novo registro clínico ou edição (compartilhada entre Tutor e Veterinário) |
 | **Localiza Pet** | Mapa GPS com rastreamento em tempo real |
+| **Coleira** | Dados ao vivo do dispositivo IoT (frequência cardíaca, atividade, pressão) |
+| **Painel Veterinário** | Busca de pets por nome ou tutor |
+| **Histórico Pet Veterinário** | Histórico clínico do pet e dados do tutor, visto pelo Veterinário |
 
 ---
 
@@ -223,7 +233,8 @@ Todos os dados (Tutor, Veterinário, Pets, Histórico Clínico, Alertas Intelige
 { idPet, idUsuario, nome, especie, raca, dtNascimento, peso, sexo, castrado, porte, dtCadastro, especieId?, racaId?, porteId? }
 // porte: 'PEQUENO' | 'MEDIO' | 'GRANDE'
 // sexo:  'MACHO'   | 'FEMEA'
-// idUsuario carrega o tutorId real da API; especieId/racaId/porteId vêm do catálogo (src/constants/catalogoPet.ts)
+// idUsuario carrega o tutorId real da API; especieId/racaId resolvidos via POST /species e /breeds
+// ("buscar ou cadastrar"), porteId vem de GET /pet-sizes — ver src/hooks/useCatalogoPet.ts
 ```
 
 ### HistoricoClinico

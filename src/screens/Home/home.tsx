@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -55,7 +56,7 @@ export const Home = () => {
   const { usuario, logout } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: pets = [] } = usePets(usuario?.id);
+  const { data: pets = [], isLoading: carregandoPets } = usePets(usuario?.id);
   const idsPets = useMemo(() => pets.map((p) => p.id), [pets]);
   const { data: alertas = [] } = useAlertasPendentes(idsPets);
   const { data: historicos } = useHistoricosDeVariosPets(idsPets);
@@ -71,6 +72,15 @@ export const Home = () => {
   );
 
   const primeiroNome = usuario?.name.split(' ')[0] ?? 'Usuário';
+
+  if (carregandoPets) {
+    return (
+      <SafeAreaView style={[styles.safeArea, styles.centralizado]}>
+        <StatusBar barStyle="dark-content" backgroundColor={cores.branco} />
+        <ActivityIndicator size="large" color={cores.roxoMedio} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -207,6 +217,7 @@ export const Home = () => {
 
 const styles = StyleSheet.create({
   safeArea:      { flex: 1, backgroundColor: cores.branco },
+  centralizado:  { justifyContent: 'center', alignItems: 'center' },
   container:     { flex: 1 },
   scrollContent: { paddingBottom: 32 },
 

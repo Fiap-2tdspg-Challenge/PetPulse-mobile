@@ -20,6 +20,7 @@ import { useCreatePet } from "../../hooks/usePets";
 import { useFindOrCreateSpecies, useFindOrCreateBreed, usePetSizes } from "../../hooks/useCatalogoPet";
 import { useAuth } from "../../context/AuthContext";
 import { ApiSex } from "../../types/types";
+import { displayParaISO, mascararDataDigitada } from "../../utils/datas";
 
 export const CadastraPet = () => {
   const navigation = useNavigation();
@@ -57,18 +58,7 @@ export const CadastraPet = () => {
     setErros((prev) => ({ ...prev, [campo]: "" }));
   };
 
-  const mascararData = (valor: string) => {
-    const numeros = valor.replace(/\D/g, "").slice(0, 8);
-    let resultado = numeros;
-    if (numeros.length > 2) resultado = numeros.slice(0, 2) + "/" + numeros.slice(2);
-    if (numeros.length > 4) resultado = numeros.slice(0, 2) + "/" + numeros.slice(2, 4) + "/" + numeros.slice(4);
-    atualizar("dtNascimento", resultado);
-  };
-
-  const dataParaISO = (dataMascarada: string): string => {
-    const [dia, mes, ano] = dataMascarada.split("/");
-    return `${ano}-${mes}-${dia}`;
-  };
+  const mascararData = (valor: string) => atualizar("dtNascimento", mascararDataDigitada(valor));
 
   const validar = (): boolean => {
     const novosErros: Partial<Record<keyof typeof form, string>> = {};
@@ -95,7 +85,7 @@ export const CadastraPet = () => {
       await criarPet.mutateAsync({
         tutorId: usuario.id,
         name: form.nome.trim(),
-        birthDate: dataParaISO(form.dtNascimento),
+        birthDate: displayParaISO(form.dtNascimento),
         weight: parseFloat(form.peso.replace(",", ".")),
         sex: sexo,
         neutered: castrado,
