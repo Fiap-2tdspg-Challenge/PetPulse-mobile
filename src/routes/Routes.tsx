@@ -15,7 +15,7 @@ import { EditaPet } from "../screens/editaPet/EditaPet";
 import { Coleira } from "../screens/coleira/coleira";
 import { CadastraHistorico } from "../screens/cadastraHistorico/CadastraHistorico";
 import { PainelVeterinario } from "../screens/painelVeterinario/PainelVeterinario";
-import { HistoricoPetVeterinario } from "../screens/painelVeterinario/HistoricoPetVeterinario";
+import { HistoricoPetVeterinario } from "../screens/historicoPetVeterinario/HistoricoPetVeterinario";
 
 export const Routes = () => {
 
