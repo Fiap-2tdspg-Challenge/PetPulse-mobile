@@ -2,6 +2,17 @@
 
 Aplicativo mobile desenvolvido em **React Native + Expo** para gerenciamento completo da saúde e bem-estar dos pets. O PetPulse centraliza o histórico clínico, alertas inteligentes, localização em tempo real e dados de dispositivos IoT em uma única plataforma.
 
+# Membros 
+
+Gabriel Neris Losano, RM564093, 2TDSPG
+
+João Vitor Biribilli Ravelli, RM565594, 2TDSPG
+
+Pedro de Matos Previtali, RM564184, 2TDSPG
+
+Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
+
+
 ---
 
 ## Sumário
@@ -41,7 +52,7 @@ Aplicativo mobile desenvolvido em **React Native + Expo** para gerenciamento com
 | Linguagem | TypeScript `~6.0.3` |
 | Navegação | React Navigation v7 (Native Stack + Bottom Tabs) |
 | Busca/cache de dados | TanStack Query (`@tanstack/react-query`) |
-| Backend | API Java real — [PetPulse-Api](../PetPulse-Api) (Spring Boot) |
+| Backend | API Java real — [PetPulse-Api](../PetPulse-Api) (Spring Boot), hospedada em [Render](https://petpulse-api-j1k8.onrender.com) |
 | Persistência local | AsyncStorage `2.2.0` (guarda o token JWT da sessão — Tutor e Veterinário permanecem logados ao reabrir o app) |
 | Localização | expo-location `~19.0.8` |
 | Mapas | react-native-maps `1.20.1` |
@@ -115,16 +126,15 @@ npm install
 # 3. Configure as variáveis de ambiente
 cp .env.example .env
 # preencha EXPO_PUBLIC_GOOGLE_MAPS_KEY com uma chave válida do Google Maps
-# EXPO_PUBLIC_API_URL já vem com o padrão para emulador Android (10.0.2.2:8080)
+# EXPO_PUBLIC_API_URL já vem com o padrão apontando para a API hospedada no
+# Render (https://petpulse-api-j1k8.onrender.com) — não precisa subir nada
+# localmente. Só troque essa variável se quiser rodar a API local durante o
+# desenvolvimento (repositório irmão PetPulse-Api, `./mvnw spring-boot:run`).
 
-# 4. Suba a API localmente (repositório irmão PetPulse-Api)
-cd ../PetPulse-Api && ./mvnw spring-boot:run   # (mvnw.cmd no Windows)
-cd ../PetPulse-mobile
-
-# 5. Inicie o servidor de desenvolvimento
+# 4. Inicie o servidor de desenvolvimento
 npm expo start          # abre o Metro Bundler
 
-# 6. Execute na plataforma desejada
+# 5. Execute na plataforma desejada
 npm run android    # Android
 npm run ios        # iOS (requer macOS)
 npm run web        # Web (experimental)
@@ -152,6 +162,7 @@ Espécie e Raça são digitadas livremente pelo tutor: o app resolve o texto par
 - **JWT sem o id do tutor**: contornado no cliente via `getTutorByEmail` (ver acima) — o ideal seria o token carregar um claim `id`.
 - **Sem filtro por tutor/pet nas listagens**: `GET /pets`, `GET /clinical-histories`, `GET /smart-alerts`, `GET /tutor-phones` e `GET /tutor-addresses` só paginam todos os registros (sem filtro por `tutorId`/`petId`). O app busca uma página grande (`size=200`) e filtra no cliente.
 - **Histórico Clínico sem profissional vinculado**: `professionalId` é opcional em `ClinicalHistoryRequest`, mas não existe endpoint de listagem de profissionais na API (mesma situação de Espécie/Raça antes do `POST /species`/`POST /breeds`). Por isso, o formulário de histórico no app não coleta profissional — os registros são criados sempre com `professionalId: null`. Quando a API ganhar um endpoint de profissionais, dá pra adicionar um seletor igual ao de Espécie/Raça.
+- **Cold start do Render**: a API está hospedada no plano free do Render, que "dorme" depois de um tempo sem uso — a primeira chamada depois disso pode demorar ~30-50s pra responder. Não é bug do app; se o login parecer travado na primeira tentativa, é o servidor acordando.
 
 ---
 
@@ -176,7 +187,7 @@ https://www.figma.com/design/azNxLqmfQtd8EnDj1zAQfV/PetPulse?node-id=92-313&t=c9
 | `fernanda.lima@vetcare.com` | `vet456` |
 | `roberto.souza@petsaude.com` | `vet789` |
 
-Todos os dados (Tutor, Veterinário, Pets, Histórico Clínico, Alertas Inteligentes) vêm sempre da API real (`PetPulse-Api`, rodando localmente).
+Todos os dados (Tutor, Veterinário, Pets, Histórico Clínico, Alertas Inteligentes) vêm sempre da API real (`PetPulse-Api`, hospedada no Render).
 
 ---
 

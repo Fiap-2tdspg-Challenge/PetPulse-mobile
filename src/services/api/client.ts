@@ -1,20 +1,22 @@
 // ─────────────────────────────────────────────────────────────────────────
-// URL base da API Java (PetPulse-Api, Spring Boot).
+// URL base da API Java (PetPulse-Api, Spring Boot), hospedada no Render:
+// https://petpulse-api-j1k8.onrender.com — funciona em qualquer plataforma
+// (emulador, dispositivo físico, web) sem precisar subir a API localmente.
 //
-// Setup padrão deste projeto: a API roda localmente via `./mvnw spring-boot:run`
-// (porta 8080). Como o app roda no emulador Android (AVD), usamos o alias
-// especial 10.0.2.2, que o próprio emulador mapeia para o "localhost" do
-// computador host (mesmo esquema usado em coleiraApi.ts).
+// O Render free tier "dorme" a API depois de um tempo sem uso: a primeira
+// chamada depois disso pode demorar ~30-50s pra responder (cold start) — não
+// é bug do app, é o servidor acordando.
 //
 // Ajuste conforme o seu setup, de preferência definindo a variável de
 // ambiente EXPO_PUBLIC_API_URL (num arquivo .env na raiz do projeto) em vez
-// de editar o valor abaixo:
+// de editar o valor abaixo — por exemplo, pra rodar a API localmente durante
+// o desenvolvimento (`./mvnw spring-boot:run`, porta 8080):
 //
-//   - Emulador Android (AVD) ............................ http://10.0.2.2:8080   (padrão)
+//   - Emulador Android (AVD) ............................ http://10.0.2.2:8080
 //   - Expo Web, na mesma máquina da API .................. http://localhost:8080
 //   - Dispositivo físico (Expo Go) na mesma Wi-Fi ........ http://<IP-do-seu-PC>:8080
 // ─────────────────────────────────────────────────────────────────────────
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8080';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://petpulse-api-j1k8.onrender.com';
 
 export class ApiError extends Error {
   status?: number;

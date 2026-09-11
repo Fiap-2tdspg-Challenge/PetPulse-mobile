@@ -19,6 +19,7 @@ import { PawBackground } from "../../components/PawBackground";
 import { useAuth } from "../../context/AuthContext";
 import { useCreateHistorico, useUpdateHistorico } from "../../hooks/useHistorico";
 import { ApiRecordType, ClinicalHistoryResponse } from "../../types/types";
+import { ApiError } from "../../services/api/client";
 
 const CATEGORIAS: Array<{ tipo: ApiRecordType; label: string }> = [
   { tipo: "VACINA", label: "Vacina" },
@@ -77,7 +78,16 @@ export const CadastraHistorico = () => {
     const dataRegex = /^\d{2}\/\d{2}\/\d{4}$/;
 
     if (form.descricao.trim().length < 3) novosErros.descricao = "Descrição deve ter pelo menos 3 caracteres.";
-    if (form.dtRetorno && !dataRegex.test(form.dtRetorno)) novosErros.dtRetorno = "Data no formato DD/MM/AAAA.";
+    if (form.dtRetorno && !dataRegex.test(form.dtRetorno)) {
+      novosErros.dtRetorno = "Data no formato DD/MM/AAAA.";
+    } else if (form.dtRetorno) {
+      // A API exige que a data de retorno seja hoje ou no futuro.
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const [dia, mes, ano] = form.dtRetorno.split("/").map(Number);
+      const dataRetorno = new Date(ano, mes - 1, dia);
+      if (dataRetorno < hoje) novosErros.dtRetorno = "A data de retorno deve ser hoje ou uma data futura.";
+    }
 
     setErros(novosErros);
     return Object.keys(novosErros).length === 0;
@@ -104,8 +114,12 @@ export const CadastraHistorico = () => {
       Alert.alert("Sucesso", `Registro ${modoEdicao ? "atualizado" : "cadastrado"} com sucesso!`, [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
-    } catch {
-      Alert.alert("Erro", `Não foi possível ${modoEdicao ? "atualizar" : "cadastrar"} o registro. Tente novamente.`);
+    } catch (erro) {
+      const mensagem =
+        erro instanceof ApiError
+          ? erro.message
+          : `Não foi possível ${modoEdicao ? "atualizar" : "cadastrar"} o registro. Tente novamente.`;
+      Alert.alert("Erro", mensagem);
     }
   };
 
