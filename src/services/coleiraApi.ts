@@ -23,15 +23,27 @@ export const COLEIRA_API_URL =
 
 export class ColeiraApiError extends Error {}
 
+// Sem timeout próprio, um Wokwi desligado não devolve "conexão recusada" na
+// hora — o fetch fica pendurado esperando o SO desistir (pode levar dezenas
+// de segundos), e a tela trava no spinner de "Conectando…" em vez de cair no
+// estado de erro. Por isso abortamos manualmente depois de alguns segundos.
+const TIMEOUT_MS = 4000;
+
 export async function getLeituraColeira(signal?: AbortSignal): Promise<LeituraColeira> {
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), TIMEOUT_MS);
+  signal?.addEventListener('abort', () => timeoutController.abort());
+
   let resposta: Response;
   try {
-    resposta = await fetch(`${COLEIRA_API_URL}/api/dados`, { signal });
+    resposta = await fetch(`${COLEIRA_API_URL}/api/dados`, { signal: timeoutController.signal });
   } catch {
     throw new ColeiraApiError(
       `Não foi possível conectar à coleira em ${COLEIRA_API_URL}. Verifique se a ` +
         'simulação Wokwi está rodando e se o endereço configurado está correto.'
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!resposta.ok) {

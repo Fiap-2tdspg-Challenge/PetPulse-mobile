@@ -1,6 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getAllPets, createPet, updatePet, deletePet } from '../services/api/petApi';
+import { getAllPets, getPetById, createPet, updatePet, deletePet } from '../services/api/petApi';
 import { PetRequest } from '../types/types';
+
+// Usado pelo painel do veterinário, que recebe só o petId por parâmetro de rota.
+export function usePet(petId?: number) {
+  return useQuery({
+    queryKey: ['pet', petId],
+    queryFn: () => getPetById(petId!),
+    enabled: !!petId,
+  });
+}
 
 export function usePets(tutorId?: number) {
   return useQuery({

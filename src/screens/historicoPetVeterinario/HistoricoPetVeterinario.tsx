@@ -11,10 +11,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useQuery } from "@tanstack/react-query";
 import { cores } from "../../theme/cores";
-import { getPetById } from "../../services/api/petApi";
-import { getTutorById } from "../../services/api/tutorApi";
+import { usePet } from "../../hooks/usePets";
+import { useTutorById } from "../../hooks/useTutor";
 import { useHistorico } from "../../hooks/useHistorico";
 import { ApiRecordType, ClinicalHistoryResponse } from "../../types/types";
 
@@ -55,16 +54,8 @@ export const HistoricoPetVeterinario = () => {
   const route = useRoute();
   const { petId } = route.params as { petId: number };
 
-  const { data: pet, isLoading: carregandoPet } = useQuery({
-    queryKey: ["pet", petId],
-    queryFn: () => getPetById(petId),
-  });
-
-  const { data: tutor, isLoading: carregandoTutor } = useQuery({
-    queryKey: ["tutor", pet?.tutorId],
-    queryFn: () => getTutorById(pet!.tutorId),
-    enabled: !!pet,
-  });
+  const { data: pet, isLoading: carregandoPet } = usePet(petId);
+  const { data: tutor, isLoading: carregandoTutor } = useTutorById(pet?.tutorId);
 
   const { data: historico = [], isLoading: carregandoHistorico } = useHistorico(petId);
 

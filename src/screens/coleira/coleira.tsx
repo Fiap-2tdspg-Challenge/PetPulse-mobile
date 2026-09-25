@@ -169,9 +169,12 @@ export const Coleira = () => {
 
         {erro && !dados && (
           <View style={styles.erroBox}>
-            <Ionicons name="cloud-offline-outline" size={32} color={cores.erro} />
-            <Text style={styles.erroTitulo}>Não foi possível conectar</Text>
-            <Text style={styles.erroTexto}>{erro}</Text>
+            <Ionicons name="cloud-offline-outline" size={32} color={cores.cinzaMedio} />
+            <Text style={styles.erroTitulo}>Dispositivo não conectado</Text>
+            <Text style={styles.erroTexto}>
+              Não conseguimos falar com a coleira. Verifique se a simulação Wokwi está rodando.
+            </Text>
+            <Text style={styles.erroDetalhe}>{erro}</Text>
             <TouchableOpacity style={styles.tentarNovamenteBtn} onPress={recarregar}>
               <Text style={styles.tentarNovamenteTexto}>Tentar novamente</Text>
             </TouchableOpacity>
@@ -359,6 +362,7 @@ const styles = StyleSheet.create({
   },
   erroTitulo: { fontSize: 15, fontWeight: '700', color: cores.cinzaEscuro, marginTop: 4 },
   erroTexto: { fontSize: 12, color: cores.cinzaMedio, textAlign: 'center', lineHeight: 18 },
+  erroDetalhe: { fontSize: 10, color: cores.cinzaMedio, textAlign: 'center', lineHeight: 14, marginTop: 4, opacity: 0.7 },
   tentarNovamenteBtn: {
     marginTop: 10,
     backgroundColor: cores.roxoMedio,

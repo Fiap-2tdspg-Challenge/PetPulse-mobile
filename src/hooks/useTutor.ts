@@ -1,10 +1,32 @@
-import { useMutation } from '@tanstack/react-query';
-import { createTutor, updateTutor, deleteTutor } from '../services/api/tutorApi';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { createTutor, updateTutor, deleteTutor, getTutorById, loginTutor } from '../services/api/tutorApi';
 import { createTutorPhone, updateTutorPhone } from '../services/api/tutorPhoneApi';
 import { findOrCreateState } from '../services/api/stateApi';
 import { findOrCreateCity } from '../services/api/cityApi';
 import { createTutorAddress, updateTutorAddress } from '../services/api/tutorAddressApi';
-import { StateRequest, CityRequest, TutorAddressRequest, TutorPhoneRequest, TutorRequest } from '../types/types';
+import {
+  StateRequest,
+  CityRequest,
+  TutorAddressRequest,
+  TutorLoginRequest,
+  TutorPhoneRequest,
+  TutorRequest,
+} from '../types/types';
+
+// Usado pelo painel do veterinário, que precisa exibir os dados do tutor responsável por um pet.
+export function useTutorById(id?: number) {
+  return useQuery({
+    queryKey: ['tutor', id],
+    queryFn: () => getTutorById(id!),
+    enabled: !!id,
+  });
+}
+
+export function useLoginTutor() {
+  return useMutation({
+    mutationFn: (dados: TutorLoginRequest) => loginTutor(dados),
+  });
+}
 
 export function useCreateTutor() {
   return useMutation({

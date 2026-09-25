@@ -25,10 +25,15 @@ export function useColeiraLive(): ColeiraLiveState {
   const query = useQuery({
     queryKey: ['coleira', 'leitura'],
     queryFn: ({ signal }) => getLeituraColeira(signal),
-    refetchInterval: INTERVALO_MS,
+    // Só reagenda o próximo poll automático enquanto a coleira está
+    // respondendo (status "success") — assim que a conexão falha, para de
+    // tentar sozinho em loop, ficando só a tentativa automática inicial (e
+    // qualquer nova depois disso é manual, via recarregar()). Enquanto
+    // conectada, continua o "ao vivo" normalmente a cada 3s.
+    refetchInterval: (query) => (query.state.status === 'error' ? false : INTERVALO_MS),
     refetchIntervalInBackground: true,
-    // A coleira pode estar offline; melhor reportar o erro no próximo poll
-    // de 3s do que ficar tentando de novo dentro do mesmo ciclo.
+    // Sem retry interno: se a tentativa falhar, cai direto no estado de
+    // erro (ver refetchInterval acima) em vez de insistir no mesmo ciclo.
     retry: false,
   });
 

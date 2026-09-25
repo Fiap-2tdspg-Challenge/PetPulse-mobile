@@ -17,9 +17,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { PawBackground } from "../../components/PawBackground";
-import { useCreateTutor, useCreateTutorPhone, useFindOrCreateState, useFindOrCreateCity, useCreateTutorAddress } from "../../hooks/useTutor";
+import {
+  useCreateTutor,
+  useCreateTutorPhone,
+  useFindOrCreateState,
+  useFindOrCreateCity,
+  useCreateTutorAddress,
+  useLoginTutor,
+} from "../../hooks/useTutor";
 import { nomeEstado } from "../../constants/estadosBrasil";
-import { loginTutor } from "../../services/api/tutorApi";
 import { setAuthToken } from "../../services/api/client";
 
 
@@ -28,6 +34,7 @@ const ADDRESS_TYPE_ID_RESIDENCIAL = 1;
 export const Cadastro = () => {
   const navigation = useNavigation();
   const criarTutor = useCreateTutor();
+  const logarTutor = useLoginTutor();
   const criarTelefone = useCreateTutorPhone();
   const resolverEstado = useFindOrCreateState();
   const resolverCidade = useFindOrCreateCity();
@@ -107,7 +114,7 @@ export const Cadastro = () => {
     setCarregando(true);
     try {
       const tutor = await criarTutor.mutateAsync({ name: nome, cpf, email, password: senha });
-      const { token } = await loginTutor({ email, password: senha });
+      const { token } = await logarTutor.mutateAsync({ email, password: senha });
       setAuthToken(token);
 
       await criarTelefone.mutateAsync({ tutorId: tutor.id, phoneNumber: telefone });
