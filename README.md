@@ -220,6 +220,7 @@ Todos os dados (Tutor, Veterinário, Pets, Histórico Clínico, Alertas Intelige
 | **Coleira** | Dados ao vivo do dispositivo IoT (frequência cardíaca, atividade, pressão) |
 | **Painel Veterinário** | Busca de pets por nome ou tutor |
 | **Histórico Pet Veterinário** | Histórico clínico do pet e dados do tutor, visto pelo Veterinário |
+| **Sobre o App** | Versão publicada, hash do commit, equipe e link do repositório (acessível em Perfil → Sobre o App) |
 
 ---
 

@@ -153,6 +153,23 @@ export const Perfil = () => {
           </View>
         </View>
 
+        {/* SOBRE */}
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("SobreApp" as never)}
+        >
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconeWrap}>
+              <Ionicons name="information-circle-outline" size={18} color={tema.roxoMedio} />
+            </View>
+            <View style={styles.infoTexto}>
+              <Text style={styles.infoValor}>Sobre o App</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={tema.textoSecundario} />
+          </View>
+        </TouchableOpacity>
+
         {/* SAIR */}
         <TouchableOpacity style={styles.sairBtn} activeOpacity={0.8} onPress={logout}>
           <Ionicons name="log-out-outline" size={20} color={cores.erro} />

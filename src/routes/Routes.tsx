@@ -16,6 +16,7 @@ import { Coleira } from "../screens/coleira/coleira";
 import { CadastraHistorico } from "../screens/cadastraHistorico/CadastraHistorico";
 import { PainelVeterinario } from "../screens/painelVeterinario/PainelVeterinario";
 import { HistoricoPetVeterinario } from "../screens/historicoPetVeterinario/HistoricoPetVeterinario";
+import { SobreApp } from "../screens/sobreApp/SobreApp";
 
 export const Routes = () => {
 
@@ -44,12 +45,14 @@ if (carregando) {
           <Stack.Screen name="EditaPet" component={EditaPet} />
           <Stack.Screen name="EditaPerfil" component={EditaPerfil} />
           <Stack.Screen name="Coleira" component={Coleira} />
+          <Stack.Screen name="SobreApp" component={SobreApp} />
         </>
       ) : veterinario ? (
         <>
           <Stack.Screen name="PainelVeterinario" component={PainelVeterinario} />
           <Stack.Screen name="HistoricoPetVeterinario" component={HistoricoPetVeterinario} />
           <Stack.Screen name="CadastraHistorico" component={CadastraHistorico} />
+          <Stack.Screen name="SobreApp" component={SobreApp} />
         </>
       ) : (
         <>
