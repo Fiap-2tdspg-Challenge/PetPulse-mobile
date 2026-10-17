@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import { cores } from '../../theme/cores';
 import { PawBackground } from '../../components/PawBackground';
 import { useAuth } from '../../context/AuthContext';
+import { ApiError } from '../../services/api/client';
 
 type Perfil = 'TUTOR' | 'VETERINARIO';
 
@@ -43,6 +44,11 @@ export const Login = () => {
         Alert.alert('Erro', 'E-mail ou senha incorretos.');
       }
       // Se sucesso, o AuthContext atualiza `usuario`/`veterinario` e o Routes redireciona automaticamente
+    } catch (erro) {
+      // Chega aqui só quando a falha não é de credencial (ver AuthContext.login) —
+      // API fora do ar, URL errada etc. Mostra o motivo real em vez de "senha incorreta".
+      const mensagem = erro instanceof ApiError ? erro.message : 'Não foi possível conectar. Tente novamente.';
+      Alert.alert('Erro', mensagem);
     } finally {
       setCarregando(false);
     }

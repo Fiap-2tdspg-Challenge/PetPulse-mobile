@@ -6,7 +6,7 @@ import { loginTutor, getTutorByEmail, deleteTutor } from '../services/api/tutorA
 import { getTutorPhoneByTutorId } from '../services/api/tutorPhoneApi';
 import { getTutorAddressByTutorId } from '../services/api/tutorAddressApi';
 import { loginProfessional, getProfessionalByEmail } from '../services/api/professionalApi';
-import { setAuthToken } from '../services/api/client';
+import { setAuthToken, ApiError } from '../services/api/client';
 import { TutorResponse } from '../types/types';
 
 const SESSAO_KEY = '@petpulse:sessao';
@@ -115,8 +115,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUsuario(await montarUsuario(tutor));
       await AsyncStorage.setItem(SESSAO_KEY, JSON.stringify({ token, tipo: 'TUTOR', email: emailNormalizado }));
       return true;
-    } catch {
+    } catch (erro) {
       setAuthToken(null);
+      // Sem status = a requisição nem chegou a ter resposta (API fora do ar,
+      // URL errada, TLS incompatível etc.) — não é credencial errada, deixa o
+      // erro real subir pra tela de Login explicar o que houve de verdade.
+      if (erro instanceof ApiError && erro.status === undefined) throw erro;
       return false;
     }
   };
@@ -143,8 +147,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         JSON.stringify({ token, tipo: 'VETERINARIO', email: emailNormalizado })
       );
       return true;
-    } catch {
+    } catch (erro) {
       setAuthToken(null);
+      if (erro instanceof ApiError && erro.status === undefined) throw erro;
       return false;
     }
   };

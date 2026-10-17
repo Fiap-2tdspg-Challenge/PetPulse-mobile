@@ -10,13 +10,14 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import * as Location from "expo-location"
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps"
+import { WebView } from "react-native-webview"
 import { Ionicons } from "@expo/vector-icons"
 import { cores } from "../../theme/cores"
 import { usePets } from "../../hooks/usePets"
 import { useAuth } from "../../context/AuthContext"
 import { Footer } from "../../components/Footer"
 import { buscarEnderecoReverso } from "../../services/geocodingApi"
+import { gerarHtmlMapaLeaflet } from "../../utils/leafletMapHtml"
 import { TemaCores, useTema } from "../../context/ThemeContext"
 
 export const LocalizaPet = () => {
@@ -25,23 +26,31 @@ export const LocalizaPet = () => {
     const styles = useMemo(() => criarEstilos(tema), [tema])
     const { data: pets } = usePets(usuario?.id)
     const pet = pets?.[0] ?? null
-    const [location, setLocation] = useState<Location.LocationObject | null>(null)
     const [address, setAddress] = useState<string | null>(null)
     const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
     const [loading, setLoading] = useState(true)
     const [errorMsg, setErrorMsg] = useState<string | null>(null)
-    const mapRef = useRef<MapView>(null)
+    const [mapaHtml, setMapaHtml] = useState<string | null>(null)
+    const webviewRef = useRef<WebView>(null)
+    const mapaCriadoRef = useRef(false)
     const subscriptionRef = useRef<Location.LocationSubscription | null>(null)
 
     const applyLocation = async (loc: Location.LocationObject) => {
         const { latitude, longitude } = loc.coords
-        setLocation(loc)
         setUpdatedAt(new Date())
 
-        mapRef.current?.animateToRegion(
-            { latitude, longitude, latitudeDelta: 0.005, longitudeDelta: 0.005 },
-            500
-        )
+        if (!mapaCriadoRef.current) {
+            // Primeira leitura: gera a página do mapa uma vez só (mudar o HTML
+            // do WebView depois disso recarregaria tudo do zero).
+            mapaCriadoRef.current = true
+            setMapaHtml(gerarHtmlMapaLeaflet(latitude, longitude, tema.roxoMedio))
+        } else {
+            // Leituras seguintes (inclusive do watchPositionAsync, que roda numa
+            // closure antiga): só move o marcador já existente dentro da página.
+            webviewRef.current?.injectJavaScript(
+                `window.atualizarPosicao && window.atualizarPosicao(${latitude}, ${longitude}); true;`
+            )
+        }
 
         const endereco = await buscarEnderecoReverso(latitude, longitude)
         setAddress(endereco ?? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`)
@@ -100,9 +109,9 @@ export const LocalizaPet = () => {
                 <View style={styles.card}>
                     <Text style={styles.petName}>{pet?.name ?? "Pet"}</Text>
 
-                    {/* Mapa Google */}
+                    {/* Mapa (Leaflet + OpenStreetMap, sem chave) */}
                     <View style={styles.mapContainer}>
-                        {!location ? (
+                        {!mapaHtml ? (
                             <View style={styles.mapPlaceholder}>
                                 {errorMsg ? (
                                     <>
@@ -117,31 +126,13 @@ export const LocalizaPet = () => {
                                 )}
                             </View>
                         ) : (
-                            <MapView
-                                ref={mapRef}
-                                provider={PROVIDER_GOOGLE}
+                            <WebView
+                                ref={webviewRef}
                                 style={styles.map}
-                                initialRegion={{
-                                    latitude: location.coords.latitude,
-                                    longitude: location.coords.longitude,
-                                    latitudeDelta: 0.005,
-                                    longitudeDelta: 0.005,
-                                }}
+                                originWhitelist={["*"]}
+                                source={{ html: mapaHtml }}
                                 scrollEnabled={false}
-                                zoomEnabled={false}
-                                rotateEnabled={false}
-                                pitchEnabled={false}
-                            >
-                                <Marker
-                                    coordinate={{
-                                        latitude: location.coords.latitude,
-                                        longitude: location.coords.longitude,
-                                    }}
-                                    title={pet?.name}
-                                    description="Localização atual do pet"
-                                    pinColor={tema.roxoMedio}
-                                />
-                            </MapView>
+                            />
                         )}
                     </View>
 

@@ -36,7 +36,7 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 - **Gerenciamento de pets** — Cadastro, edição e visualização de perfil completo (espécie, raça, peso, porte, sexo, castração).
 - **Histórico clínico** — Registro de vacinas, consultas, exames, medicações, cirurgias e outros eventos, com suporte a datas de retorno.
 - **Alertas inteligentes** — Notificações por nível de risco (BAIXO, MÉDIO, ALTO), geradas automaticamente a partir de leituras IoT fora da faixa esperada, pelo histórico clínico, pelo sistema ou manualmente.
-- **Localização do pet** — Rastreamento GPS em tempo real com mapa interativo (Google Maps) e endereço reverso.
+- **Localização do pet** — Rastreamento GPS em tempo real com mapa interativo e endereço reverso, ambos via OpenStreetMap (sem chave, sem custo).
 - **Dispositivo IoT** — Exibição de dados do sensor: frequência cardíaca, nível de atividade, pressão e status do dispositivo.
 - **Perfil do usuário** — Visualização, edição e exclusão de conta.
 - **Painel do Veterinário** — Login próprio, busca de pets por nome/tutor e histórico clínico (visualização e cadastro de novos registros).
@@ -55,7 +55,7 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 | Backend | API Java real — [PetPulse-Api](../PetPulse-Api) (Spring Boot), hospedada em [Render](https://petpulse-api-j1k8.onrender.com) |
 | Persistência local | AsyncStorage `2.2.0` (guarda o token JWT da sessão — Tutor e Veterinário permanecem logados ao reabrir o app) |
 | Localização | expo-location `~19.0.8` |
-| Mapas | react-native-maps `1.20.1` |
+| Mapas | Leaflet + OpenStreetMap, renderizado via `react-native-webview` `13.16.1` (sem chave, sem custo) |
 | Gradientes | expo-linear-gradient `~15.0.8` |
 | Ícones | @expo/vector-icons `^15.1.1` |
 
@@ -98,14 +98,15 @@ PetPulse-mobile/
 │   ├── services/
 │   │   ├── api/             # Client HTTP + DTOs para a PetPulse-Api (inclui token JWT, ver client.ts)
 │   │   ├── coleiraApi.ts    # Serviço externo (dispositivo IoT/coleira, fora da PetPulse-Api)
-│   │   ├── geocodingApi.ts  # Serviço externo (Google Geocoding — endereço reverso)
+│   │   ├── geocodingApi.ts  # Serviço externo (Nominatim/OpenStreetMap — endereço reverso, sem chave)
 │   │   └── queryClient.ts   # Instância do QueryClient do TanStack Query
 │   ├── theme/
 │   │   └── cores.ts         # Paleta de cores e gradientes
 │   ├── types/               # Interfaces TypeScript dos modelos de domínio
 │   └── utils/                # Funções puras de regra de negócio
 │       ├── datas.ts         # Conversão/máscara de datas (DD/MM/AAAA ↔ ISO), usado nos formulários
-│       └── lembretes.ts     # Cálculo do próximo retorno clínico
+│       ├── lembretes.ts     # Cálculo do próximo retorno clínico
+│       └── leafletMapHtml.ts # Gera o HTML do mapa (Leaflet + OpenStreetMap) usado no WebView de Localiza Pet
 └── android/ ios/            # Projetos nativos gerados pelo Expo
 ```
 
@@ -171,6 +172,8 @@ Espécie e Raça são digitadas livremente pelo tutor: o app resolve o texto par
 - **Sem filtro por tutor/pet nas listagens**: `GET /pets`, `GET /clinical-histories`, `GET /smart-alerts`, `GET /tutor-phones` e `GET /tutor-addresses` só paginam todos os registros (sem filtro por `tutorId`/`petId`). O app busca uma página grande (`size=200`) e filtra no cliente.
 - **Histórico Clínico sem profissional vinculado**: `professionalId` é opcional em `ClinicalHistoryRequest`, mas não existe endpoint de listagem de profissionais na API (mesma situação de Espécie/Raça antes do `POST /species`/`POST /breeds`). Por isso, o formulário de histórico no app não coleta profissional — os registros são criados sempre com `professionalId: null`. Quando a API ganhar um endpoint de profissionais, dá pra adicionar um seletor igual ao de Espécie/Raça.
 - **Cold start do Render**: a API está hospedada no plano free do Render, que "dorme" depois de um tempo sem uso — a primeira chamada depois disso pode demorar ~30-50s pra responder. Não é bug do app; se o login parecer travado na primeira tentativa, é o servidor acordando.
+
+**Sobre o mapa (Localiza Pet)**: inicialmente usava `react-native-maps` com o provider do Google, mas o Maps SDK nativo do Google exige faturamento habilitado no projeto do Google Cloud mesmo dentro da cota gratuita — sem isso, o mapa renderizava a área em branco/cinza (só a marca d'água "Google"). Pra não depender de cartão cadastrado, o mapa foi trocado para **Leaflet + tiles do OpenStreetMap**, renderizado dentro de um `WebView` (`src/utils/leafletMapHtml.ts`): o HTML é gerado uma vez com a posição inicial, e atualizações seguintes de GPS só movem o marcador via `injectJavaScript`, sem recarregar a página. O endereço reverso segue o mesmo princípio, via Nominatim (OpenStreetMap).
 
 ---
 
