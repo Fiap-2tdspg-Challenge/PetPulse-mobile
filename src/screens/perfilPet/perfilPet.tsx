@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { Footer } from "../../components/Footer";
 import { PetResponse } from "../../types/types";
 import { useAuth } from "../../context/AuthContext";
 import { usePets, useDeletePet } from "../../hooks/usePets";
+import { TemaCores, useTema } from "../../context/ThemeContext";
 
 const SEXO_LABEL: Record<string, string> = {
   M: "Macho",
@@ -46,6 +47,8 @@ export const PerfilPet = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { usuario } = useAuth();
+  const { tema } = useTema();
+  const styles = useMemo(() => criarEstilos(tema), [tema]);
   const petParam = (route.params as { pet: PetResponse } | undefined)?.pet;
   const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.id : undefined);
   const pet = petParam ?? pets?.[0] ?? null;
@@ -77,7 +80,7 @@ export const PerfilPet = () => {
 
   if (carregando) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: cores.roxoMedio, justifyContent: "center", alignItems: "center" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: tema.roxoMedio, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={cores.branco} />
       </SafeAreaView>
     );
@@ -85,10 +88,10 @@ export const PerfilPet = () => {
 
   if (!pet) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: cores.roxoMedio, justifyContent: "center", alignItems: "center" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: tema.roxoMedio, justifyContent: "center", alignItems: "center" }}>
         <Text style={{ color: cores.branco, fontSize: 16 }}>Pet não encontrado.</Text>
         <TouchableOpacity onPress={() => navigation.navigate("CadastraPet" as never)} style={{ marginTop: 16 }}>
-          <Text style={{ color: cores.roxoClaro }}>Cadastrar pet</Text>
+          <Text style={{ color: tema.roxoClaro }}>Cadastrar pet</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -97,7 +100,7 @@ export const PerfilPet = () => {
   const InfoItem = ({ icone, label, valor }: { icone: string; label: string; valor: string }) => (
     <View style={styles.infoItem}>
       <View style={styles.infoIconeWrap}>
-        <Ionicons name={icone as any} size={18} color={cores.roxoMedio} />
+        <Ionicons name={icone as any} size={18} color={tema.roxoMedio} />
       </View>
       <View>
         <Text style={styles.infoLabel}>{label}</Text>
@@ -108,7 +111,7 @@ export const PerfilPet = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={cores.roxoMedio} />
+      <StatusBar barStyle="light-content" backgroundColor={tema.roxoMedio} />
 
       {/* HEADER */}
       <View style={styles.header}>
@@ -182,7 +185,7 @@ export const PerfilPet = () => {
           activeOpacity={0.85}
           onPress={() => navigation.navigate("EditaPet" as never, { pet } as never)}
         >
-          <Ionicons name="create-outline" size={20} color={cores.roxoMedio} />
+          <Ionicons name="create-outline" size={20} color={tema.roxoMedio} />
           <Text style={styles.editarBtnTexto}>Editar informações do pet</Text>
         </TouchableOpacity>
 
@@ -205,16 +208,16 @@ export const PerfilPet = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const criarEstilos = (tema: TemaCores) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: cores.roxoMedio,
+    backgroundColor: tema.roxoMedio,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: cores.roxoMedio,
+    backgroundColor: tema.roxoMedio,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
@@ -231,7 +234,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   avatarArea: {
-    backgroundColor: cores.roxoMedio,
+    backgroundColor: tema.roxoMedio,
     alignItems: "center",
     paddingBottom: 32,
     paddingTop: 12,
@@ -258,7 +261,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   card: {
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderRadius: 16,
     marginHorizontal: 20,
     marginTop: 20,
@@ -268,7 +271,7 @@ const styles = StyleSheet.create({
   cardTitulo: {
     fontSize: 14,
     fontWeight: "700",
-    color: cores.cinzaEscuro,
+    color: tema.texto,
     marginBottom: 4,
   },
   infoItem: {
@@ -280,18 +283,18 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: cores.roxoFundo,
+    backgroundColor: tema.roxoFundo,
     alignItems: "center",
     justifyContent: "center",
   },
   infoLabel: {
     fontSize: 11,
-    color: cores.cinzaMedio,
+    color: tema.textoSecundario,
     fontWeight: "500",
   },
   infoValor: {
     fontSize: 14,
-    color: cores.cinzaEscuro,
+    color: tema.texto,
     fontWeight: "600",
     marginTop: 1,
   },
@@ -304,7 +307,7 @@ const styles = StyleSheet.create({
   },
   acaoBtn: {
     flex: 1,
-    backgroundColor: cores.roxoPrimario,
+    backgroundColor: tema.roxoPrimario,
     borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 4,
@@ -328,14 +331,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderWidth: 1,
-    borderColor: cores.roxoClaro,
+    borderColor: tema.roxoClaro,
   },
   editarBtnTexto: {
     fontSize: 14,
     fontWeight: "700",
-    color: cores.roxoMedio,
+    color: tema.roxoMedio,
   },
   excluirBtn: {
     flexDirection: "row",
@@ -346,7 +349,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderWidth: 1,
     borderColor: cores.erro,
   },

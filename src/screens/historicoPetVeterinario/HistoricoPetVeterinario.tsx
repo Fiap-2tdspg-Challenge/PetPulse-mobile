@@ -16,20 +16,25 @@ import { usePet } from "../../hooks/usePets";
 import { useTutorById } from "../../hooks/useTutor";
 import { useHistorico } from "../../hooks/useHistorico";
 import { ApiRecordType, ClinicalHistoryResponse } from "../../types/types";
+import { TemaCores, useTema } from "../../context/ThemeContext";
 
-const CATEGORIAS: Record<ApiRecordType, { label: string; icone: string; cor: string; corFundo: string }> = {
-  VACINA: { label: "Vacina", icone: "fitness", cor: "#2563EB", corFundo: "#EFF6FF" },
-  CONSULTA: { label: "Consulta", icone: "calendar", cor: cores.verde, corFundo: "#ECFEFF" },
-  EXAME: { label: "Exame", icone: "document-text", cor: cores.roxoMedio, corFundo: cores.roxoFundo },
-  MEDICAMENTO: { label: "Medicamento", icone: "medkit", cor: "#EA580C", corFundo: "#FFF7ED" },
-  DOENCA: { label: "Doença", icone: "bandage", cor: cores.erro, corFundo: "#FEF2F2" },
-  OBSERVACAO: {
-    label: "Observação",
-    icone: "ellipsis-horizontal-circle",
-    cor: cores.cinzaEscuro,
-    corFundo: cores.cinzaClaro,
-  },
-};
+function criarCategorias(
+  tema: TemaCores
+): Record<ApiRecordType, { label: string; icone: string; cor: string; corFundo: string }> {
+  return {
+    VACINA: { label: "Vacina", icone: "fitness", cor: "#2563EB", corFundo: "#EFF6FF" },
+    CONSULTA: { label: "Consulta", icone: "calendar", cor: cores.verde, corFundo: "#ECFEFF" },
+    EXAME: { label: "Exame", icone: "document-text", cor: tema.roxoMedio, corFundo: tema.roxoFundo },
+    MEDICAMENTO: { label: "Medicamento", icone: "medkit", cor: "#EA580C", corFundo: "#FFF7ED" },
+    DOENCA: { label: "Doença", icone: "bandage", cor: cores.erro, corFundo: "#FEF2F2" },
+    OBSERVACAO: {
+      label: "Observação",
+      icone: "ellipsis-horizontal-circle",
+      cor: cores.cinzaEscuro,
+      corFundo: cores.cinzaClaro,
+    },
+  };
+}
 
 function calcularIdade(dtNascimento: string): string {
   const nasc = new Date(dtNascimento);
@@ -52,6 +57,9 @@ function formatarData(iso: string): string {
 export const HistoricoPetVeterinario = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { tema } = useTema();
+  const styles = useMemo(() => criarEstilos(tema), [tema]);
+  const categorias = useMemo(() => criarCategorias(tema), [tema]);
   const { petId } = route.params as { petId: number };
 
   const { data: pet, isLoading: carregandoPet } = usePet(petId);
@@ -80,7 +88,7 @@ export const HistoricoPetVeterinario = () => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centrado}>
-          <ActivityIndicator size="large" color={cores.roxoMedio} />
+          <ActivityIndicator size="large" color={tema.roxoMedio} />
         </View>
       </SafeAreaView>
     );
@@ -88,7 +96,7 @@ export const HistoricoPetVeterinario = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={cores.roxoPrimario} />
+      <StatusBar barStyle="light-content" backgroundColor={tema.roxoPrimario} />
 
       <View style={styles.header}>
         <TouchableOpacity style={styles.voltarBtn} onPress={() => navigation.goBack()}>
@@ -106,7 +114,7 @@ export const HistoricoPetVeterinario = () => {
           <View style={styles.card}>
             <View style={styles.cardHeaderRow}>
               <View style={styles.petAvatar}>
-                <Ionicons name="paw" size={22} color={cores.roxoMedio} />
+                <Ionicons name="paw" size={22} color={tema.roxoMedio} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardTitulo}>{pet.name}</Text>
@@ -138,7 +146,7 @@ export const HistoricoPetVeterinario = () => {
         <Text style={styles.secaoLabel}>Tutor responsável</Text>
         {carregandoTutor ? (
           <View style={styles.centradoInline}>
-            <ActivityIndicator size="small" color={cores.roxoMedio} />
+            <ActivityIndicator size="small" color={tema.roxoMedio} />
           </View>
         ) : (
           <View style={styles.card}>
@@ -165,7 +173,7 @@ export const HistoricoPetVeterinario = () => {
 
         {carregandoHistorico ? (
           <View style={styles.centradoInline}>
-            <ActivityIndicator size="large" color={cores.roxoMedio} />
+            <ActivityIndicator size="large" color={tema.roxoMedio} />
           </View>
         ) : registros.length === 0 ? (
           <View style={styles.centradoInline}>
@@ -175,7 +183,7 @@ export const HistoricoPetVeterinario = () => {
         ) : (
           <View style={styles.card}>
             {registros.map((item, idx) => {
-              const cat = CATEGORIAS[item.recordType];
+              const cat = categorias[item.recordType];
               return (
                 <TouchableOpacity
                   key={item.id}
@@ -211,13 +219,13 @@ export const HistoricoPetVeterinario = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: cores.cinzaClaro },
+const criarEstilos = (tema: TemaCores) => StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: tema.fundo },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: cores.roxoPrimario,
+    backgroundColor: tema.roxoPrimario,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
@@ -234,7 +242,7 @@ const styles = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 32 },
 
   card: {
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderRadius: 16,
     padding: 16,
     marginBottom: 4,
@@ -249,7 +257,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: cores.roxoFundo,
+    backgroundColor: tema.roxoFundo,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -257,27 +265,27 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: cores.roxoMedio,
+    backgroundColor: tema.roxoMedio,
     alignItems: "center",
     justifyContent: "center",
   },
-  cardTitulo: { fontSize: 15, fontWeight: "700", color: cores.cinzaEscuro },
-  cardSub: { fontSize: 12, color: cores.cinzaMedio, marginTop: 2 },
+  cardTitulo: { fontSize: 15, fontWeight: "700", color: tema.texto },
+  cardSub: { fontSize: 12, color: tema.textoSecundario, marginTop: 2 },
 
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 6,
     borderTopWidth: 1,
-    borderTopColor: cores.cinzaClaro,
+    borderTopColor: tema.borda,
   },
-  infoLabel: { fontSize: 13, color: cores.cinzaMedio },
-  infoValor: { fontSize: 13, color: cores.cinzaEscuro, fontWeight: "600" },
+  infoLabel: { fontSize: 13, color: tema.textoSecundario },
+  infoValor: { fontSize: 13, color: tema.texto, fontWeight: "600" },
 
   secaoLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: cores.cinzaMedio,
+    color: tema.textoSecundario,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 8,
@@ -285,18 +293,18 @@ const styles = StyleSheet.create({
   },
 
   itemRow: { flexDirection: "row", alignItems: "flex-start", paddingVertical: 12, gap: 12 },
-  itemRowBorder: { borderBottomWidth: 1, borderBottomColor: cores.cinzaClaro },
+  itemRowBorder: { borderBottomWidth: 1, borderBottomColor: tema.borda },
   itemIcone: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   itemBody: { flex: 1 },
-  itemTipo: { fontSize: 13, fontWeight: "700", color: cores.cinzaEscuro },
-  itemDescricao: { fontSize: 13, color: cores.cinzaEscuro, marginTop: 2 },
-  itemProfissional: { fontSize: 12, color: cores.cinzaMedio, marginTop: 2 },
+  itemTipo: { fontSize: 13, fontWeight: "700", color: tema.texto },
+  itemDescricao: { fontSize: 13, color: tema.texto, marginTop: 2 },
+  itemProfissional: { fontSize: 12, color: tema.textoSecundario, marginTop: 2 },
   retornoRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   retornoText: { fontSize: 12, color: cores.verde, fontWeight: "500" },
-  itemObs: { fontSize: 12, color: cores.cinzaEscuro, fontStyle: "italic", marginTop: 4 },
-  itemData: { fontSize: 12, color: cores.cinzaMedio },
+  itemObs: { fontSize: 12, color: tema.texto, fontStyle: "italic", marginTop: 4 },
+  itemData: { fontSize: 12, color: tema.textoSecundario },
 
   centrado: { flex: 1, alignItems: "center", justifyContent: "center" },
   centradoInline: { alignItems: "center", justifyContent: "center", paddingVertical: 30, gap: 10 },
-  semRegistros: { fontSize: 14, color: cores.cinzaMedio },
+  semRegistros: { fontSize: 14, color: tema.textoSecundario },
 });

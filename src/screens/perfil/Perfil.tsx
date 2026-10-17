@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Switch,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import { cores } from "../../theme/cores";
 import { Footer } from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
+import { TemaCores, useTema } from "../../context/ThemeContext";
 import { ApiError } from "../../services/api/client";
 
 function formatarData(iso: string): string {
@@ -34,30 +36,26 @@ function formatarTelefone(tel: string): string {
   return tel;
 }
 
-const InfoItem = ({
-  icone,
-  label,
-  valor,
-}: {
-  icone: string;
-  label: string;
-  valor: string;
-}) => (
-  <View style={styles.infoItem}>
-    <View style={styles.infoIconeWrap}>
-      <Ionicons name={icone as any} size={18} color={cores.roxoMedio} />
-    </View>
-    <View style={styles.infoTexto}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValor}>{valor}</Text>
-    </View>
-  </View>
-);
+type InfoItemProps = { icone: string; label: string; valor: string };
 
 export const Perfil = () => {
   const navigation = useNavigation();
   const { usuario, logout, excluirConta } = useAuth();
+  const { tema, modo, alternarModo } = useTema();
+  const styles = useMemo(() => criarEstilos(tema), [tema]);
   const [excluindo, setExcluindo] = useState(false);
+
+  const InfoItem = ({ icone, label, valor }: InfoItemProps) => (
+    <View style={styles.infoItem}>
+      <View style={styles.infoIconeWrap}>
+        <Ionicons name={icone as any} size={18} color={tema.roxoMedio} />
+      </View>
+      <View style={styles.infoTexto}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValor}>{valor}</Text>
+      </View>
+    </View>
+  );
 
   if (!usuario) return null;
 
@@ -97,7 +95,7 @@ export const Perfil = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={cores.roxoMedio} />
+      <StatusBar barStyle="light-content" backgroundColor={tema.roxoMedio} />
 
       {/* HEADER */}
       <View style={styles.header}>
@@ -135,6 +133,26 @@ export const Perfil = () => {
           <InfoItem icone="today-outline"     label="Membro desde"  valor={formatarData(usuario.createdAt)} />
         </View>
 
+        {/* APARÊNCIA */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitulo}>Aparência</Text>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconeWrap}>
+              <Ionicons name={modo === "dark" ? "moon" : "sunny"} size={18} color={tema.roxoMedio} />
+            </View>
+            <View style={styles.infoTexto}>
+              <Text style={styles.infoLabel}>Modo escuro</Text>
+              <Text style={styles.infoValor}>{modo === "dark" ? "Ativado" : "Desativado"}</Text>
+            </View>
+            <Switch
+              value={modo === "dark"}
+              onValueChange={alternarModo}
+              trackColor={{ false: tema.borda, true: tema.roxoClaro }}
+              thumbColor={modo === "dark" ? tema.roxoMedio : tema.superficie}
+            />
+          </View>
+        </View>
+
         {/* SAIR */}
         <TouchableOpacity style={styles.sairBtn} activeOpacity={0.8} onPress={logout}>
           <Ionicons name="log-out-outline" size={20} color={cores.erro} />
@@ -158,16 +176,16 @@ export const Perfil = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const criarEstilos = (tema: TemaCores) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: cores.roxoMedio,
+    backgroundColor: tema.roxoMedio,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: cores.roxoMedio,
+    backgroundColor: tema.roxoMedio,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
@@ -184,7 +202,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   avatarArea: {
-    backgroundColor: cores.roxoMedio,
+    backgroundColor: tema.roxoMedio,
     alignItems: "center",
     paddingBottom: 32,
     paddingTop: 12,
@@ -216,7 +234,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   card: {
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderRadius: 16,
     marginHorizontal: 20,
     marginTop: 20,
@@ -226,7 +244,7 @@ const styles = StyleSheet.create({
   cardTitulo: {
     fontSize: 14,
     fontWeight: "700",
-    color: cores.cinzaEscuro,
+    color: tema.texto,
     marginBottom: 4,
   },
   infoItem: {
@@ -238,7 +256,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: cores.roxoFundo,
+    backgroundColor: tema.roxoFundo,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -247,12 +265,12 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 11,
-    color: cores.cinzaMedio,
+    color: tema.textoSecundario,
     fontWeight: "500",
   },
   infoValor: {
     fontSize: 14,
-    color: cores.cinzaEscuro,
+    color: tema.texto,
     fontWeight: "600",
   },
   sairBtn: {
@@ -264,7 +282,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderWidth: 1,
     borderColor: cores.erro,
   },

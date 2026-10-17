@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
     ActivityIndicator,
     ScrollView,
@@ -17,9 +17,12 @@ import { usePets } from "../../hooks/usePets"
 import { useAuth } from "../../context/AuthContext"
 import { Footer } from "../../components/Footer"
 import { buscarEnderecoReverso } from "../../services/geocodingApi"
+import { TemaCores, useTema } from "../../context/ThemeContext"
 
 export const LocalizaPet = () => {
     const { usuario } = useAuth()
+    const { tema, modo } = useTema()
+    const styles = useMemo(() => criarEstilos(tema), [tema])
     const { data: pets } = usePets(usuario?.id)
     const pet = pets?.[0] ?? null
     const [location, setLocation] = useState<Location.LocationObject | null>(null)
@@ -84,7 +87,7 @@ export const LocalizaPet = () => {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor={cores.branco} />
+            <StatusBar barStyle={modo === "dark" ? "light-content" : "dark-content"} backgroundColor={tema.fundo} />
             <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.scrollContent}
@@ -108,7 +111,7 @@ export const LocalizaPet = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <ActivityIndicator size="large" color={cores.roxoMedio} />
+                                        <ActivityIndicator size="large" color={tema.roxoMedio} />
                                         <Text style={styles.loadingText}>Obtendo localização...</Text>
                                     </>
                                 )}
@@ -136,7 +139,7 @@ export const LocalizaPet = () => {
                                     }}
                                     title={pet?.name}
                                     description="Localização atual do pet"
-                                    pinColor={cores.roxoMedio}
+                                    pinColor={tema.roxoMedio}
                                 />
                             </MapView>
                         )}
@@ -173,10 +176,10 @@ export const LocalizaPet = () => {
     )
 }
 
-const styles = StyleSheet.create({
+const criarEstilos = (tema: TemaCores) => StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: cores.cinzaClaro,
+        backgroundColor: tema.fundo,
     },
     scroll: {
         flex: 1,
@@ -191,10 +194,10 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 22,
         fontWeight: "700",
-        color: cores.cinzaEscuro,
+        color: tema.texto,
     },
     card: {
-        backgroundColor: cores.branco,
+        backgroundColor: tema.superficie,
         borderRadius: 20,
         padding: 20,
         shadowColor: "#000",
@@ -206,7 +209,7 @@ const styles = StyleSheet.create({
     petName: {
         fontSize: 22,
         fontWeight: "700",
-        color: cores.cinzaEscuro,
+        color: tema.texto,
         textAlign: "center",
         marginBottom: 16,
     },
@@ -220,13 +223,13 @@ const styles = StyleSheet.create({
     },
     mapPlaceholder: {
         flex: 1,
-        backgroundColor: cores.cinzaClaro,
+        backgroundColor: tema.fundo,
         justifyContent: "center",
         alignItems: "center",
         gap: 8,
     },
     loadingText: {
-        color: cores.cinzaMedio,
+        color: tema.textoSecundario,
         fontSize: 14,
     },
     errorText: {
@@ -242,21 +245,21 @@ const styles = StyleSheet.create({
     infoTitle: {
         fontSize: 15,
         fontWeight: "600",
-        color: cores.cinzaEscuro,
+        color: tema.texto,
     },
     infoAddress: {
         fontSize: 14,
-        color: cores.cinzaEscuro,
+        color: tema.texto,
         lineHeight: 20,
     },
     infoTime: {
         fontSize: 12,
-        color: cores.cinzaMedio,
+        color: tema.textoSecundario,
         marginTop: 2,
     },
     button: {
         marginTop: 20,
-        backgroundColor: cores.roxoMedio,
+        backgroundColor: tema.roxoMedio,
         borderRadius: 14,
         paddingVertical: 14,
         alignItems: "center",

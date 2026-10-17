@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { cores } from '../../theme/cores';
 import { useAuth } from '../../context/AuthContext';
+import { TemaCores, useTema } from '../../context/ThemeContext';
 import { usePets } from '../../hooks/usePets';
 import { useAlertasPendentes } from '../../hooks/useAlertas';
 import { useHistoricosDeVariosPets } from '../../hooks/useHistorico';
@@ -54,6 +55,8 @@ function textoFaltam(dias: number): string {
 export const Home = () => {
   const navigation = useNavigation();
   const { usuario, logout } = useAuth();
+  const { tema, modo } = useTema();
+  const styles = useMemo(() => criarEstilos(tema), [tema]);
   const queryClient = useQueryClient();
 
   const { data: pets = [], isLoading: carregandoPets } = usePets(usuario?.id);
@@ -76,15 +79,15 @@ export const Home = () => {
   if (carregandoPets) {
     return (
       <SafeAreaView style={[styles.safeArea, styles.centralizado]}>
-        <StatusBar barStyle="dark-content" backgroundColor={cores.branco} />
-        <ActivityIndicator size="large" color={cores.roxoMedio} />
+        <StatusBar barStyle={modo === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={tema.fundo} />
+        <ActivityIndicator size="large" color={tema.roxoMedio} />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={cores.branco} />
+      <StatusBar barStyle={modo === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={tema.fundo} />
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
@@ -95,7 +98,7 @@ export const Home = () => {
           <Text style={styles.saudacao}>Olá, {primeiroNome}!</Text>
           <View style={styles.headerAcoes}>
             <View>
-              <Ionicons name="notifications-outline" size={26} color={cores.cinzaEscuro} />
+              <Ionicons name="notifications-outline" size={26} color={tema.texto} />
               {alertas.length > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{alertas.length > 9 ? '9+' : alertas.length}</Text>
@@ -103,7 +106,7 @@ export const Home = () => {
               )}
             </View>
             <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-              <Ionicons name="log-out-outline" size={24} color={cores.roxoMedio} />
+              <Ionicons name="log-out-outline" size={24} color={tema.roxoMedio} />
             </TouchableOpacity>
           </View>
         </View>
@@ -151,7 +154,7 @@ export const Home = () => {
             <Text style={styles.secaoTitulo}>Próximo retorno</Text>
             <View style={styles.cardLembrete}>
               <View style={styles.lembreteSino}>
-                <Ionicons name="notifications" size={22} color={cores.roxoMedio} />
+                <Ionicons name="notifications" size={22} color={tema.roxoMedio} />
               </View>
               <View style={styles.lembreteInfo}>
                 <Text style={styles.lembreteNome}>{lembrete.descricao}</Text>
@@ -202,7 +205,7 @@ export const Home = () => {
                 onPress={() => (navigation as any).navigate(acao.rota, acao.params)}
               >
                 <View style={styles.acaoIconeWrap}>
-                  <Ionicons name={acao.icone} size={26} color={cores.roxoMedio} />
+                  <Ionicons name={acao.icone} size={26} color={tema.roxoMedio} />
                 </View>
                 <Text style={styles.acaoLabel}>{acao.label}</Text>
               </TouchableOpacity>
@@ -215,8 +218,8 @@ export const Home = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea:      { flex: 1, backgroundColor: cores.branco },
+const criarEstilos = (tema: TemaCores) => StyleSheet.create({
+  safeArea:      { flex: 1, backgroundColor: tema.fundo },
   centralizado:  { justifyContent: 'center', alignItems: 'center' },
   container:     { flex: 1 },
   scrollContent: { paddingBottom: 32 },
@@ -231,7 +234,7 @@ const styles = StyleSheet.create({
   },
   headerAcoes: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   logoutBtn:   { padding: 2 },
-  saudacao:    { fontSize: 24, fontWeight: '800', color: cores.preto },
+  saudacao:    { fontSize: 24, fontWeight: '800', color: tema.texto },
 
   badge: {
     position: 'absolute',
@@ -247,10 +250,10 @@ const styles = StyleSheet.create({
 
   secao:       { marginTop: 20, paddingHorizontal: 20 },
   ultimaSecao: { marginBottom: 8 },
-  secaoTitulo: { fontSize: 16, fontWeight: '700', color: cores.cinzaEscuro, marginBottom: 12 },
+  secaoTitulo: { fontSize: 16, fontWeight: '700', color: tema.texto, marginBottom: 12 },
 
   // pets
-  cardPet:     { backgroundColor: cores.roxoMedio, borderRadius: 16, padding: 16 },
+  cardPet:     { backgroundColor: tema.roxoMedio, borderRadius: 16, padding: 16 },
   cardPetTopo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   cardPetTitulo: { fontSize: 14, fontWeight: '700', color: cores.branco },
   adicionarPet:  { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '500' },
@@ -263,19 +266,19 @@ const styles = StyleSheet.create({
 
   // próximo retorno
   cardLembrete: {
-    backgroundColor: cores.roxoFundo,
+    backgroundColor: tema.superficie,
     borderRadius: 16,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  lembreteSino:  { width: 44, height: 44, borderRadius: 22, backgroundColor: cores.branco, alignItems: 'center', justifyContent: 'center' },
+  lembreteSino:  { width: 44, height: 44, borderRadius: 22, backgroundColor: tema.fundo, alignItems: 'center', justifyContent: 'center' },
   lembreteInfo:  { flex: 1, gap: 2 },
-  lembreteNome:  { fontSize: 14, fontWeight: '700', color: cores.preto },
-  lembretePet:   { fontSize: 12, color: cores.cinzaMedio },
-  lembreteData:  { fontSize: 12, color: cores.cinzaEscuro },
-  lembreteFaltam: { fontSize: 12, color: cores.roxoMedio, fontWeight: '600', textAlign: 'right' },
+  lembreteNome:  { fontSize: 14, fontWeight: '700', color: tema.texto },
+  lembretePet:   { fontSize: 12, color: tema.textoSecundario },
+  lembreteData:  { fontSize: 12, color: tema.textoSecundario },
+  lembreteFaltam: { fontSize: 12, color: tema.roxoMedio, fontWeight: '600', textAlign: 'right' },
 
   // notificações
   cardAlerta: {
@@ -287,12 +290,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   alertaMensagem:    { fontSize: 13, fontWeight: '700', marginBottom: 2 },
-  alertaRecomendacao:{ fontSize: 12, color: cores.cinzaEscuro },
+  alertaRecomendacao:{ fontSize: 12, color: tema.texto },
 
   // ações rápidas
   acoesGrid:    { flexDirection: 'row', justifyContent: 'space-between' },
   acaoItem:     { alignItems: 'center', width: '22%', gap: 6 },
-  acaoIconeWrap:{ width: 58, height: 58, borderRadius: 16, backgroundColor: cores.roxoFundo, alignItems: 'center', justifyContent: 'center' },
-  acaoLabel:    { fontSize: 11, color: cores.cinzaEscuro, fontWeight: '600', textAlign: 'center' },
+  acaoIconeWrap:{ width: 58, height: 58, borderRadius: 16, backgroundColor: tema.roxoFundo, alignItems: 'center', justifyContent: 'center' },
+  acaoLabel:    { fontSize: 11, color: tema.texto, fontWeight: '600', textAlign: 'center' },
 });
 

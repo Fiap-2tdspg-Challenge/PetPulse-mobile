@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
   RefreshControl,
@@ -21,6 +21,7 @@ import { COLEIRA_API_URL } from '../../services/coleiraApi';
 import { useColeiraLive } from '../../hooks/useColeiraLive';
 import { PetResponse } from '../../types/types';
 import { EstadoColeira } from '../../types/coleiraLivre';
+import { TemaCores, useTema } from '../../context/ThemeContext';
 
 const ESTADO_CONFIG: Record<
   EstadoColeira,
@@ -77,15 +78,7 @@ function formatarHora(data: Date): string {
   return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-const VitalCard = ({
-  icone,
-  label,
-  valor,
-  unidade,
-  destaque,
-  corDestaque,
-  filho,
-}: {
+type VitalCardProps = {
   icone: keyof typeof Ionicons.glyphMap;
   label: string;
   valor: string;
@@ -93,22 +86,26 @@ const VitalCard = ({
   destaque?: boolean;
   corDestaque?: string;
   filho?: React.ReactNode;
-}) => (
-  <View style={[styles.card, destaque && { borderColor: corDestaque, borderWidth: 1.5 }]}>
-    <View style={styles.cardLabelRow}>
-      <Ionicons name={icone} size={14} color={cores.roxoMedio} />
-      <Text style={styles.cardLabel}>{label}</Text>
-    </View>
-    <Text style={styles.cardValor}>{valor}</Text>
-    {unidade ? <Text style={styles.cardUnidade}>{unidade}</Text> : null}
-    {filho}
-  </View>
-);
+};
 
 export const Coleira = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { usuario } = useAuth();
+  const { tema } = useTema();
+  const styles = useMemo(() => criarEstilos(tema), [tema]);
+
+  const VitalCard = ({ icone, label, valor, unidade, destaque, corDestaque, filho }: VitalCardProps) => (
+    <View style={[styles.card, destaque && { borderColor: corDestaque, borderWidth: 1.5 }]}>
+      <View style={styles.cardLabelRow}>
+        <Ionicons name={icone} size={14} color={tema.roxoMedio} />
+        <Text style={styles.cardLabel}>{label}</Text>
+      </View>
+      <Text style={styles.cardValor}>{valor}</Text>
+      {unidade ? <Text style={styles.cardUnidade}>{unidade}</Text> : null}
+      {filho}
+    </View>
+  );
   const petParam = (route.params as { pet: PetResponse } | undefined)?.pet;
   const { data: pets, isLoading: carregandoPets } = usePets(!petParam ? usuario?.id : undefined);
   const pet = petParam ?? pets?.[0] ?? null;
@@ -120,7 +117,7 @@ export const Coleira = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={cores.roxoPrimario} />
+      <StatusBar barStyle="light-content" backgroundColor={tema.roxoPrimario} />
 
       {/* HEADER */}
       <View style={styles.header}>
@@ -136,7 +133,7 @@ export const Coleira = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} tintColor={cores.roxoMedio} />}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} tintColor={tema.roxoMedio} />}
       >
         {/* PET + STATUS */}
         <View style={styles.topo}>
@@ -162,7 +159,7 @@ export const Coleira = () => {
         {/* ESTADO DE CARREGAMENTO / ERRO */}
         {carregando && !dados && (
           <View style={styles.centrado}>
-            <ActivityIndicator size="large" color={cores.roxoMedio} />
+            <ActivityIndicator size="large" color={tema.roxoMedio} />
             <Text style={styles.carregandoTexto}>Conectando à coleira…</Text>
           </View>
         )}
@@ -265,10 +262,10 @@ export const Coleira = () => {
 
                 <View style={styles.historicoLinha}>
                   <View style={styles.historicoLegenda}>
-                    <View style={[styles.legendaDot, { backgroundColor: cores.roxoMedio }]} />
+                    <View style={[styles.legendaDot, { backgroundColor: tema.roxoMedio }]} />
                     <Text style={styles.legendaTexto}>Pressão</Text>
                   </View>
-                  <Sparkline data={historico.map((h) => h.pressaoSistolica)} color={cores.roxoMedio} />
+                  <Sparkline data={historico.map((h) => h.pressaoSistolica)} color={tema.roxoMedio} />
                 </View>
 
                 <View style={styles.historicoLinha}>
@@ -298,14 +295,14 @@ export const Coleira = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: cores.cinzaClaro },
+const criarEstilos = (tema: TemaCores) => StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: tema.fundo },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: cores.roxoPrimario,
+    backgroundColor: tema.roxoPrimario,
     paddingHorizontal: 12,
     paddingVertical: 14,
   },
@@ -325,7 +322,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: cores.roxoMedio,
+    backgroundColor: tema.roxoMedio,
     borderRadius: 16,
     padding: 14,
   },
@@ -350,22 +347,22 @@ const styles = StyleSheet.create({
   badgeTexto: { fontSize: 11, fontWeight: '800', color: cores.branco, letterSpacing: 0.5 },
 
   centrado: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 12 },
-  carregandoTexto: { fontSize: 13, color: cores.cinzaMedio },
+  carregandoTexto: { fontSize: 13, color: tema.textoSecundario },
 
   erroBox: {
     marginTop: 16,
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
     gap: 6,
   },
-  erroTitulo: { fontSize: 15, fontWeight: '700', color: cores.cinzaEscuro, marginTop: 4 },
-  erroTexto: { fontSize: 12, color: cores.cinzaMedio, textAlign: 'center', lineHeight: 18 },
-  erroDetalhe: { fontSize: 10, color: cores.cinzaMedio, textAlign: 'center', lineHeight: 14, marginTop: 4, opacity: 0.7 },
+  erroTitulo: { fontSize: 15, fontWeight: '700', color: tema.texto, marginTop: 4 },
+  erroTexto: { fontSize: 12, color: tema.textoSecundario, textAlign: 'center', lineHeight: 18 },
+  erroDetalhe: { fontSize: 10, color: tema.textoSecundario, textAlign: 'center', lineHeight: 14, marginTop: 4, opacity: 0.7 },
   tentarNovamenteBtn: {
     marginTop: 10,
-    backgroundColor: cores.roxoMedio,
+    backgroundColor: tema.roxoMedio,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 12,
@@ -388,14 +385,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: cores.cinzaClaro,
+    borderColor: tema.borda,
     padding: 12,
   },
   alertaTexto: { flex: 1, fontSize: 13, fontWeight: '700' },
-  alertaTextoVazio: { flex: 1, fontSize: 13, color: cores.cinzaMedio },
+  alertaTextoVazio: { flex: 1, fontSize: 13, color: tema.textoSecundario },
 
   grid: {
     flexDirection: 'row',
@@ -405,37 +402,37 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '48%',
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
   },
   cardLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
-  cardLabel: { fontSize: 11, fontWeight: '600', color: cores.cinzaMedio, textTransform: 'uppercase' },
-  cardValor: { fontSize: 22, fontWeight: '800', color: cores.preto },
-  cardUnidade: { fontSize: 11, color: cores.cinzaMedio, marginTop: 2 },
+  cardLabel: { fontSize: 11, fontWeight: '600', color: tema.textoSecundario, textTransform: 'uppercase' },
+  cardValor: { fontSize: 22, fontWeight: '800', color: tema.texto },
+  cardUnidade: { fontSize: 11, color: tema.textoSecundario, marginTop: 2 },
 
   barraFundo: {
     marginTop: 8,
     height: 6,
     borderRadius: 3,
-    backgroundColor: cores.cinzaClaro,
+    backgroundColor: tema.fundo,
     overflow: 'hidden',
   },
   barraPreenchida: { height: '100%', borderRadius: 3 },
 
   historicoCard: {
     marginTop: 4,
-    backgroundColor: cores.branco,
+    backgroundColor: tema.superficie,
     borderRadius: 16,
     padding: 16,
     gap: 14,
   },
-  historicoTitulo: { fontSize: 13, fontWeight: '700', color: cores.cinzaEscuro, marginBottom: 2 },
+  historicoTitulo: { fontSize: 13, fontWeight: '700', color: tema.texto, marginBottom: 2 },
   historicoLinha: { gap: 6 },
   historicoLegenda: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendaDot: { width: 8, height: 8, borderRadius: 4 },
-  legendaTexto: { fontSize: 11, color: cores.cinzaMedio, fontWeight: '600' },
+  legendaTexto: { fontSize: 11, color: tema.textoSecundario, fontWeight: '600' },
 
   statusRodape: {
     marginTop: 16,
@@ -446,5 +443,5 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   statusPonto: { width: 6, height: 6, borderRadius: 3, backgroundColor: cores.sucesso },
-  statusTexto: { fontSize: 11, color: cores.cinzaMedio },
+  statusTexto: { fontSize: 11, color: tema.textoSecundario },
 });

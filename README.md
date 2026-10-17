@@ -8,8 +8,6 @@ Gabriel Neris Losano, RM564093, 2TDSPG
 
 João Vitor Biribilli Ravelli, RM565594, 2TDSPG
 
-Pedro de Matos Previtali, RM564184, 2TDSPG
-
 Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 
 
@@ -42,6 +40,7 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 - **Dispositivo IoT** — Exibição de dados do sensor: frequência cardíaca, nível de atividade, pressão e status do dispositivo.
 - **Perfil do usuário** — Visualização, edição e exclusão de conta.
 - **Painel do Veterinário** — Login próprio, busca de pets por nome/tutor e histórico clínico (visualização e cadastro de novos registros).
+- **Tema claro/escuro** — Segue automaticamente o tema do sistema operacional, com opção de alternar manualmente em Perfil → Aparência (preferência persistida no dispositivo).
 
 ---
 
@@ -62,6 +61,8 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 
 > **Nota sobre a camada de dados**: Tutor (perfil, telefone, endereço), Veterinário (perfil), Pets, Histórico Clínico e Alertas Inteligentes vêm todos de verdade da **PetPulse-Api** (Spring Boot), via `src/services/api/` + hooks em `src/hooks/` (TanStack Query) — sem nenhum cache local: cada login busca tudo de novo da API, então nunca existe uma cópia desatualizada em relação ao banco. Veja [Integração com a API](#integração-com-a-api-petpulse-api) para detalhes.
 
+> **Nota sobre o tema claro/escuro**: implementado via `src/context/ThemeContext.tsx` (`ThemeProvider`/`useTema`), que detecta o tema do sistema (`useColorScheme`) e permite override manual (switch em Perfil → Aparência) persistido em AsyncStorage. Telas de fluxo de autenticação com identidade visual roxa de marca (Login, Cadastro, CadastraPet, EditaPet, CadastraHistorico, painéis do Veterinário) mantêm o fundo roxo fixo em qualquer tema — intencional, mesmo padrão de apps com telas de onboarding/formulário coloridas. Todas as demais telas (Home, Perfil, Meu Pet, Histórico Clínico, Localiza Pet, Coleira, Histórico do Veterinário) são theme-aware: usam os tokens de `TemaCores` (`fundo`, `superficie`, `texto`, `textoSecundario`, `borda`) para fundo/cards/texto, e tons de roxo próprios (`roxoPrimario/roxoMedio/roxoClaro/roxoFundo`, um pouco mais claros no escuro) para headers, cards e ícones de destaque — assim nenhuma dessas superfícies "brancas" sobra fixa quando o app está no modo escuro.
+
 ---
 
 ## Estrutura do projeto
@@ -74,7 +75,8 @@ PetPulse-mobile/
 │   ├── constants/
 │   │   └── estadosBrasil.ts # Nomes das UFs (usado só para o POST /states, não é catálogo hardcoded de negócio)
 │   ├── context/
-│   │   └── AuthContext.tsx  # Contexto de autenticação (Tutor e Veterinário) e persistência de sessão
+│   │   ├── AuthContext.tsx  # Contexto de autenticação (Tutor e Veterinário) e persistência de sessão
+│   │   └── ThemeContext.tsx # Contexto de tema claro/escuro (segue o sistema, com override manual)
 │   ├── hooks/                # Hooks de dados (TanStack Query) — usePets, useHistorico, useAlertas, useTutor, useCatalogoPet
 │   ├── routes/
 │   │   └── Routes.tsx       # Definição das rotas (Tutor / Veterinário / não autenticado)

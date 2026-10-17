@@ -18,21 +18,24 @@ import { usePets } from "../../hooks/usePets"
 import { useDeleteHistorico, useHistorico } from "../../hooks/useHistorico"
 import { PetResponse, ClinicalHistoryResponse, ApiRecordType } from "../../types/types"
 import { Footer } from "../../components/Footer"
+import { TemaCores, useTema } from "../../context/ThemeContext"
 
-const CATEGORIAS: Array<{
+function criarCategorias(tema: TemaCores): Array<{
     tipo: ApiRecordType
     label: string
     icone: string
     cor: string
     corFundo: string
-}> = [
-    { tipo: "VACINA",     label: "Vacinas",      icone: "fitness",       cor: "#2563EB", corFundo: "#EFF6FF" },
-    { tipo: "CONSULTA",   label: "Consultas",    icone: "calendar",      cor: cores.verde, corFundo: "#ECFEFF" },
-    { tipo: "EXAME",      label: "Exames",       icone: "document-text", cor: cores.roxoMedio, corFundo: cores.roxoFundo },
-    { tipo: "MEDICAMENTO",label: "Medicamentos", icone: "medkit",        cor: "#EA580C", corFundo: "#FFF7ED" },
-    { tipo: "DOENCA",     label: "Doenças",      icone: "bandage",       cor: cores.erro, corFundo: "#FEF2F2" },
-    { tipo: "OBSERVACAO", label: "Observações",  icone: "ellipsis-horizontal-circle", cor: cores.cinzaEscuro, corFundo: cores.cinzaClaro },
-]
+}> {
+    return [
+        { tipo: "VACINA",     label: "Vacinas",      icone: "fitness",       cor: "#2563EB", corFundo: "#EFF6FF" },
+        { tipo: "CONSULTA",   label: "Consultas",    icone: "calendar",      cor: cores.verde, corFundo: "#ECFEFF" },
+        { tipo: "EXAME",      label: "Exames",       icone: "document-text", cor: tema.roxoMedio, corFundo: tema.roxoFundo },
+        { tipo: "MEDICAMENTO",label: "Medicamentos", icone: "medkit",        cor: "#EA580C", corFundo: "#FFF7ED" },
+        { tipo: "DOENCA",     label: "Doenças",      icone: "bandage",       cor: cores.erro, corFundo: "#FEF2F2" },
+        { tipo: "OBSERVACAO", label: "Observações",  icone: "ellipsis-horizontal-circle", cor: cores.cinzaEscuro, corFundo: cores.cinzaClaro },
+    ]
+}
 
 function calcularIdade(dtNascimento: string): string {
     const nasc = new Date(dtNascimento)
@@ -51,12 +54,15 @@ function formatarData(iso: string): string {
     return `${dia}/${mes}/${ano}`
 }
 
-type Categoria = typeof CATEGORIAS[number]
+type Categoria = ReturnType<typeof criarCategorias>[number]
 
 export const HistoricoClinico = () => {
     const navigation = useNavigation()
     const route = useRoute()
     const { usuario } = useAuth()
+    const { tema, modo } = useTema()
+    const styles = useMemo(() => criarEstilos(tema), [tema])
+    const categorias = useMemo(() => criarCategorias(tema), [tema])
     const categoriaInicial = (route.params as { categoriaInicial?: ApiRecordType } | undefined)?.categoriaInicial
     const categoriaInicialAbertaRef = useRef(false)
 
@@ -73,7 +79,7 @@ export const HistoricoClinico = () => {
     useEffect(() => {
         if (petSelecionado && categoriaInicial && !categoriaInicialAbertaRef.current) {
             categoriaInicialAbertaRef.current = true
-            const cat = CATEGORIAS.find((c) => c.tipo === categoriaInicial)
+            const cat = categorias.find((c) => c.tipo === categoriaInicial)
             if (cat) setCategoriaAberta(cat)
         }
     }, [petSelecionado])
@@ -145,7 +151,7 @@ export const HistoricoClinico = () => {
     if (categoriaAberta) {
         return (
             <SafeAreaView style={styles.safeArea}>
-                <StatusBar barStyle="light-content" backgroundColor={cores.roxoPrimario} />
+                <StatusBar barStyle="light-content" backgroundColor={tema.roxoPrimario} />
 
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.voltarBtn} onPress={voltarMenu}>
@@ -177,7 +183,7 @@ export const HistoricoClinico = () => {
 
                     {carregando ? (
                         <View style={styles.centrado}>
-                            <ActivityIndicator size="large" color={cores.roxoMedio} />
+                            <ActivityIndicator size="large" color={tema.roxoMedio} />
                         </View>
                     ) : registros.length === 0 ? (
                         <View style={styles.centrado}>
@@ -232,7 +238,7 @@ export const HistoricoClinico = () => {
     /* ── TELA DE MENU ── */
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor={cores.branco} />
+            <StatusBar barStyle={modo === "dark" ? "light-content" : "dark-content"} backgroundColor={tema.fundo} />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollMenu}>
                 <Text style={styles.menuTitulo}>Histórico</Text>
@@ -242,7 +248,7 @@ export const HistoricoClinico = () => {
 
                 {carregando ? (
                     <View style={styles.centrado}>
-                        <ActivityIndicator size="large" color={cores.roxoMedio} />
+                        <ActivityIndicator size="large" color={tema.roxoMedio} />
                     </View>
                 ) : petSelecionado ? (
                     <>
@@ -295,7 +301,7 @@ export const HistoricoClinico = () => {
                         onPress={() => navigation.navigate("CadastraPet" as never)}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="add-circle-outline" size={24} color={cores.roxoMedio} />
+                        <Ionicons name="add-circle-outline" size={24} color={tema.roxoMedio} />
                         <Text style={styles.petCardVazioText}>Cadastrar pet</Text>
                     </TouchableOpacity>
                 )}
@@ -305,12 +311,12 @@ export const HistoricoClinico = () => {
                     <>
                         <Text style={[styles.secaoLabel, { marginTop: 24 }]}>Veja os dados que deseja</Text>
                         <View style={styles.categoriasCard}>
-                            {CATEGORIAS.map((cat, idx) => (
+                            {categorias.map((cat, idx) => (
                                 <TouchableOpacity
                                     key={cat.tipo}
                                     style={[
                                         styles.categoriaRow,
-                                        idx < CATEGORIAS.length - 1 && styles.categoriaRowBorder,
+                                        idx < categorias.length - 1 && styles.categoriaRowBorder,
                                     ]}
                                     onPress={() => abrirCategoria(cat)}
                                     activeOpacity={0.7}
@@ -332,22 +338,22 @@ export const HistoricoClinico = () => {
     )
 }
 
-const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: cores.cinzaClaro },
+const criarEstilos = (tema: TemaCores) => StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: tema.fundo },
 
     /* ── MENU ── */
     scrollMenu: { paddingHorizontal: 16, paddingBottom: 16 },
     menuTitulo: {
         fontSize: 26,
         fontWeight: "800",
-        color: cores.preto,
+        color: tema.texto,
         marginTop: 20,
         marginBottom: 16,
     },
     secaoLabel: {
         fontSize: 13,
         fontWeight: "600",
-        color: cores.cinzaMedio,
+        color: tema.textoSecundario,
         textTransform: "uppercase",
         letterSpacing: 0.5,
         marginBottom: 8,
@@ -357,7 +363,7 @@ const styles = StyleSheet.create({
     petCard: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: cores.roxoMedio,
+        backgroundColor: tema.roxoMedio,
         borderRadius: 16,
         padding: 16,
         gap: 12,
@@ -377,14 +383,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         gap: 8,
-        backgroundColor: cores.branco,
+        backgroundColor: tema.superficie,
         borderRadius: 16,
         padding: 20,
         borderWidth: 1.5,
-        borderColor: cores.roxoClaro,
+        borderColor: tema.roxoClaro,
         borderStyle: "dashed",
     },
-    petCardVazioText: { fontSize: 15, color: cores.roxoMedio, fontWeight: "600" },
+    petCardVazioText: { fontSize: 15, color: tema.roxoMedio, fontWeight: "600" },
 
     // pet tabs (múltiplos pets)
     petTabsContent: { gap: 8, paddingVertical: 4 },
@@ -393,16 +399,16 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: cores.roxoClaro,
-        backgroundColor: cores.branco,
+        borderColor: tema.roxoClaro,
+        backgroundColor: tema.superficie,
     },
-    petTabAtivo: { backgroundColor: cores.roxoMedio, borderColor: cores.roxoMedio },
-    petTabText: { fontSize: 13, color: cores.roxoMedio, fontWeight: "500" },
+    petTabAtivo: { backgroundColor: tema.roxoMedio, borderColor: tema.roxoMedio },
+    petTabText: { fontSize: 13, color: tema.roxoMedio, fontWeight: "500" },
     petTabTextAtivo: { color: cores.branco },
 
     // categorias
     categoriasCard: {
-        backgroundColor: cores.branco,
+        backgroundColor: tema.superficie,
         borderRadius: 16,
         overflow: "hidden",
         shadowColor: "#000",
@@ -418,7 +424,7 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         gap: 14,
     },
-    categoriaRowBorder: { borderBottomWidth: 1, borderBottomColor: cores.cinzaClaro },
+    categoriaRowBorder: { borderBottomWidth: 1, borderBottomColor: tema.borda },
     categoriaIcone: {
         width: 40,
         height: 40,
@@ -426,14 +432,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    categoriaLabel: { flex: 1, fontSize: 15, fontWeight: "500", color: cores.cinzaEscuro },
+    categoriaLabel: { flex: 1, fontSize: 15, fontWeight: "500", color: tema.texto },
 
     /* ── DETALHE ── */
     header: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: cores.roxoPrimario,
+        backgroundColor: tema.roxoPrimario,
         paddingHorizontal: 16,
         paddingVertical: 14,
     },
@@ -450,7 +456,7 @@ const styles = StyleSheet.create({
     petCardDetalhe: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: cores.roxoMedio,
+        backgroundColor: tema.roxoMedio,
         paddingHorizontal: 16,
         paddingVertical: 12,
         gap: 12,
@@ -470,7 +476,7 @@ const styles = StyleSheet.create({
     secaoTitulo: {
         fontSize: 16,
         fontWeight: "700",
-        color: cores.cinzaEscuro,
+        color: tema.texto,
         marginTop: 12,
         marginBottom: 8,
     },
@@ -479,25 +485,25 @@ const styles = StyleSheet.create({
     itemRow: {
         flexDirection: "row",
         alignItems: "flex-start",
-        backgroundColor: cores.branco,
+        backgroundColor: tema.superficie,
         paddingHorizontal: 16,
         paddingVertical: 14,
     },
-    itemRowBorder: { borderBottomWidth: 1, borderBottomColor: cores.cinzaClaro },
+    itemRowBorder: { borderBottomWidth: 1, borderBottomColor: tema.borda },
     itemBody: { flex: 1 },
-    itemDescricao: { fontSize: 14, fontWeight: "600", color: cores.cinzaEscuro },
-    itemProfissional: { fontSize: 12, color: cores.cinzaMedio, marginTop: 2 },
+    itemDescricao: { fontSize: 14, fontWeight: "600", color: tema.texto },
+    itemProfissional: { fontSize: 12, color: tema.textoSecundario, marginTop: 2 },
     retornoRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
     retornoText: { fontSize: 12, color: cores.verde, fontWeight: "500" },
     itemObs: {
         fontSize: 12,
-        color: cores.cinzaEscuro,
+        color: tema.texto,
         fontStyle: "italic",
         marginTop: 4,
     },
     itemDireita: { alignItems: "flex-end", gap: 6, marginLeft: 8 },
-    itemData: { fontSize: 12, color: cores.cinzaMedio },
+    itemData: { fontSize: 12, color: tema.textoSecundario },
 
     centrado: { alignItems: "center", justifyContent: "center", paddingVertical: 60 },
-    semRegistros: { fontSize: 15, color: cores.cinzaMedio, marginTop: 12 },
+    semRegistros: { fontSize: 15, color: tema.textoSecundario, marginTop: 12 },
 })
