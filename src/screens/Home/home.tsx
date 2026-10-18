@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +16,7 @@ import { cores } from '../../theme/cores';
 import { useAuth } from '../../context/AuthContext';
 import { TemaCores, useTema } from '../../context/ThemeContext';
 import { usePets } from '../../hooks/usePets';
-import { useAlertasPendentes } from '../../hooks/useAlertas';
+import { useAlertasPendentes, useResolverAlerta } from '../../hooks/useAlertas';
 import { useHistoricosDeVariosPets } from '../../hooks/useHistorico';
 import { calcularProximoRetorno } from '../../utils/lembretes';
 import { notificarAlertasDeRisco } from '../../services/notifications';
@@ -63,6 +64,8 @@ export const Home = () => {
   const { data: pets = [], isLoading: carregandoPets } = usePets(usuario?.id);
   const idsPets = useMemo(() => pets.map((p) => p.id), [pets]);
   const { data: alertas = [] } = useAlertasPendentes(idsPets);
+  const resolverAlerta = useResolverAlerta();
+  const [notificacoesAbertas, setNotificacoesAbertas] = useState(false);
   const { data: historicos } = useHistoricosDeVariosPets(idsPets);
   const lembrete = useMemo(() => calcularProximoRetorno(historicos, pets), [historicos, pets]);
 
@@ -105,14 +108,14 @@ export const Home = () => {
         <View style={styles.header}>
           <Text style={styles.saudacao}>Olá, {primeiroNome}!</Text>
           <View style={styles.headerAcoes}>
-            <View>
+            <TouchableOpacity onPress={() => setNotificacoesAbertas(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Ionicons name="notifications-outline" size={26} color={tema.texto} />
               {alertas.length > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{alertas.length > 9 ? '9+' : alertas.length}</Text>
                 </View>
               )}
-            </View>
+            </TouchableOpacity>
             <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
               <Ionicons name="log-out-outline" size={24} color={tema.roxoMedio} />
             </TouchableOpacity>
@@ -179,28 +182,6 @@ export const Home = () => {
           </View>
         )}
 
-        {/* NOTIFICAÇÕES */}
-        {alertas.length > 0 && (
-          <View style={styles.secao}>
-            <Text style={styles.secaoTitulo}>Notificações</Text>
-            {alertas.map((alerta) => {
-              const cfg = NIVEL_CONFIG[alerta.riskLevel];
-              return (
-                <View
-                  key={alerta.id}
-                  style={[styles.cardAlerta, { backgroundColor: cfg.corFundo, borderLeftColor: cfg.cor }]}
-                >
-                  <Ionicons name={cfg.icone as any} size={22} color={cfg.cor} style={{ marginRight: 10 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.alertaMensagem, { color: cfg.cor }]}>{alerta.message}</Text>
-                    <Text style={styles.alertaRecomendacao}>{alerta.recommendation}</Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
         {/* AÇÕES RÁPIDAS */}
         <View style={[styles.secao, styles.ultimaSecao]}>
           <Text style={styles.secaoTitulo}>Ações rápidas</Text>
@@ -222,6 +203,66 @@ export const Home = () => {
         </View>
       </ScrollView>
       <Footer />
+
+      {/* MODAL DE NOTIFICAÇÕES */}
+      <Modal
+        visible={notificacoesAbertas}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setNotificacoesAbertas(false)}
+      >
+        <View style={styles.modalFundo}>
+          <View style={styles.modalConteudo}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitulo}>Notificações</Text>
+              <TouchableOpacity onPress={() => setNotificacoesAbertas(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={24} color={tema.texto} />
+              </TouchableOpacity>
+            </View>
+
+            {alertas.length > 0 && (
+              <TouchableOpacity
+                style={styles.limparTodasBtn}
+                onPress={() => alertas.forEach((alerta) => resolverAlerta.mutate(alerta))}
+              >
+                <Text style={styles.limparTodasTexto}>Limpar todas</Text>
+              </TouchableOpacity>
+            )}
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalLista}>
+              {alertas.length === 0 ? (
+                <View style={styles.modalVazio}>
+                  <Ionicons name="notifications-off-outline" size={36} color={tema.textoSecundario} />
+                  <Text style={styles.modalVazioTexto}>Nenhuma notificação por aqui.</Text>
+                </View>
+              ) : (
+                alertas.map((alerta) => {
+                  const cfg = NIVEL_CONFIG[alerta.riskLevel];
+                  return (
+                    <View
+                      key={alerta.id}
+                      style={[styles.cardAlerta, { backgroundColor: cfg.corFundo, borderLeftColor: cfg.cor }]}
+                    >
+                      <Ionicons name={cfg.icone as any} size={22} color={cfg.cor} style={{ marginRight: 10 }} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.alertaMensagem, { color: cfg.cor }]}>{alerta.message}</Text>
+                        <Text style={styles.alertaRecomendacao}>{alerta.recommendation}</Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => resolverAlerta.mutate(alerta)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        style={{ marginLeft: 8 }}
+                      >
+                        <Ionicons name="close-circle" size={20} color={tema.textoSecundario} />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -305,5 +346,28 @@ const criarEstilos = (tema: TemaCores) => StyleSheet.create({
   acaoItem:     { alignItems: 'center', width: '22%', gap: 6 },
   acaoIconeWrap:{ width: 58, height: 58, borderRadius: 16, backgroundColor: tema.roxoFundo, alignItems: 'center', justifyContent: 'center' },
   acaoLabel:    { fontSize: 11, color: tema.texto, fontWeight: '600', textAlign: 'center' },
+
+  // modal de notificações
+  modalFundo: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalConteudo: {
+    backgroundColor: tema.fundo,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '75%',
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
+  modalTitulo: { fontSize: 18, fontWeight: '800', color: tema.texto },
+  limparTodasBtn: { alignSelf: 'flex-end', paddingHorizontal: 20, marginTop: 8 },
+  limparTodasTexto: { fontSize: 13, fontWeight: '600', color: tema.roxoMedio },
+  modalLista: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
+  modalVazio: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, gap: 10 },
+  modalVazioTexto: { fontSize: 13, color: tema.textoSecundario },
 });
 

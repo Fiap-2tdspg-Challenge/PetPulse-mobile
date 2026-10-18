@@ -43,11 +43,24 @@ export function getAuthToken(): string | null {
   return authToken;
 }
 
+// Sem timeout próprio, uma API inalcançável (fora do ar, URL errada, firewall
+// engolindo o pacote) deixa o fetch pendurado pra sempre em vez de falhar —
+// e como AuthContext chama apiFetch pra restaurar a sessão salva logo na
+// abertura do app, isso trava o app inteiro no loading. 60s dá folga de
+// sobra pro cold start do Render (~30-50s) e ainda garante que a chamada
+// falhe de verdade se a API estiver mesmo inacessível.
+const TIMEOUT_MS = 60000;
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), TIMEOUT_MS);
+  init?.signal?.addEventListener('abort', () => timeoutController.abort());
+
   let resposta: Response;
   try {
     resposta = await fetch(`${API_URL}${path}`, {
       ...init,
+      signal: timeoutController.signal,
       headers: {
         'Content-Type': 'application/json',
         ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
@@ -58,6 +71,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     throw new ApiError(
       `Não foi possível conectar à API em ${API_URL}. Verifique se o PetPulse-Api está rodando `
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!resposta.ok) {

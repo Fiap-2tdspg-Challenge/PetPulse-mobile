@@ -35,7 +35,7 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 - **Autenticação** — Login do Tutor e do Veterinário com JWT de verdade (Spring Security + OAuth2 Resource Server, mesmo `POST /login` pros dois — o backend resolve o papel pelo e-mail).
 - **Gerenciamento de pets** — Cadastro, edição e visualização de perfil completo (espécie, raça, peso, porte, sexo, castração).
 - **Histórico clínico** — Registro de vacinas, consultas, exames, medicações, cirurgias e outros eventos, com suporte a datas de retorno.
-- **Alertas inteligentes** — Notificações por nível de risco (BAIXO, MÉDIO, ALTO), geradas automaticamente a partir de leituras IoT fora da faixa esperada, pelo histórico clínico, pelo sistema ou manualmente.
+- **Alertas inteligentes** — Notificações por nível de risco (BAIXO, MÉDIO, ALTO), geradas automaticamente a partir de leituras IoT fora da faixa esperada, pelo histórico clínico, pelo sistema ou manualmente. Acessíveis pelo sino na Home, com opção de limpar (individualmente ou todas de uma vez).
 - **Localização do pet** — Rastreamento GPS em tempo real com mapa interativo e endereço reverso, ambos via OpenStreetMap (sem chave, sem custo).
 - **Dispositivo IoT** — Exibição de dados do sensor: frequência cardíaca, nível de atividade, pressão e status do dispositivo.
 - **Perfil do usuário** — Visualização, edição e exclusão de conta.
