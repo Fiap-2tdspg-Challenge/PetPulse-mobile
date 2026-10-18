@@ -41,6 +41,7 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 - **Perfil do usuário** — Visualização, edição e exclusão de conta.
 - **Painel do Veterinário** — Login próprio, busca de pets por nome/tutor e histórico clínico (visualização e cadastro de novos registros).
 - **Tema claro/escuro** — Segue automaticamente o tema do sistema operacional, com opção de alternar manualmente em Perfil → Aparência (preferência persistida no dispositivo).
+- **Notificação local de alerta de saúde** — Assim que um alerta inteligente de risco ALTO chega da API (gerado automaticamente por leitura de IoT fora da faixa, ou pelo histórico clínico), o app dispara uma notificação local de verdade. Tocar nela leva o tutor pra Home, onde o alerta aparece. Cada alerta notifica só uma vez por instalação do app.
 
 ---
 
@@ -56,6 +57,7 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 | Persistência local | AsyncStorage `2.2.0` (guarda o token JWT da sessão — Tutor e Veterinário permanecem logados ao reabrir o app) |
 | Localização | expo-location `~19.0.8` |
 | Mapas | Leaflet + OpenStreetMap, renderizado via `react-native-webview` `13.16.1` (sem chave, sem custo) |
+| Notificações | expo-notifications `~57.0.23` (local, disparada por alerta de risco real da API) |
 | Gradientes | expo-linear-gradient `~15.0.8` |
 | Ícones | @expo/vector-icons `^15.1.1` |
 
@@ -99,6 +101,7 @@ PetPulse-mobile/
 │   │   ├── api/             # Client HTTP + DTOs para a PetPulse-Api (inclui token JWT, ver client.ts)
 │   │   ├── coleiraApi.ts    # Serviço externo (dispositivo IoT/coleira, fora da PetPulse-Api)
 │   │   ├── geocodingApi.ts  # Serviço externo (Nominatim/OpenStreetMap — endereço reverso, sem chave)
+│   │   ├── notifications.ts # Notificação local de alerta de risco (expo-notifications)
 │   │   └── queryClient.ts   # Instância do QueryClient do TanStack Query
 │   ├── theme/
 │   │   └── cores.ts         # Paleta de cores e gradientes

@@ -22,7 +22,16 @@ module.exports = {
     slug: 'PetPulse-mobile',
     version: '1.0.0',
     userInterfaceStyle: 'automatic',
-    plugins: ['expo-status-bar', 'expo-font'],
+    plugins: [
+      'expo-status-bar',
+      'expo-font',
+      [
+        'expo-notifications',
+        {
+          color: '#6B21A8',
+        },
+      ],
+    ],
     extra: {
       commitHash: commitAtual(),
     },

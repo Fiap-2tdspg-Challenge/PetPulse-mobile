@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { usePets } from '../../hooks/usePets';
 import { useAlertasPendentes } from '../../hooks/useAlertas';
 import { useHistoricosDeVariosPets } from '../../hooks/useHistorico';
 import { calcularProximoRetorno } from '../../utils/lembretes';
+import { notificarAlertasDeRisco } from '../../services/notifications';
 import { Footer } from '../../components/Footer';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
@@ -64,6 +65,13 @@ export const Home = () => {
   const { data: alertas = [] } = useAlertasPendentes(idsPets);
   const { data: historicos } = useHistoricosDeVariosPets(idsPets);
   const lembrete = useMemo(() => calcularProximoRetorno(historicos, pets), [historicos, pets]);
+
+  // Notifica alertas de risco ALTO assim que chegam da API — evento real
+  // (gerado pelo backend a partir de leitura de IoT ou histórico clínico),
+  // não um disparo manual. Cada alerta notifica só uma vez (ver notifications.ts).
+  useEffect(() => {
+    notificarAlertasDeRisco(alertas);
+  }, [alertas]);
 
   useFocusEffect(
     useCallback(() => {
