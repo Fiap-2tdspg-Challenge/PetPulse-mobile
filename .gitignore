@@ -17,6 +17,19 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Saída de build local (android/ e ios/ em si são versionados neste projeto,
+# mas o que o Gradle/Xcode geram a cada build não deve ser — além de inútil,
+# carrega caminho absoluto da máquina local e já quebrou um build na nuvem
+# da EAS por causa disso)
+android/build/
+android/app/build/
+android/.gradle/
+android/.cxx/
+android/app/.cxx/
+android/local.properties
+ios/build/
+ios/Pods/
+
 # Metro
 .metro-health-check*
 

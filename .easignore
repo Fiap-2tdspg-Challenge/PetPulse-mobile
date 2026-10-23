@@ -1,0 +1,17 @@
+# Controla o que o `eas build` envia no upload do projeto (além do .gitignore).
+# Sem isso, pastas de build local grandes (e com caminho absoluto da máquina,
+# que já quebrou um build por causa disso) vão junto no pacote.
+
+node_modules/
+android/build/
+android/app/build/
+android/.gradle/
+android/.cxx/
+android/app/.cxx/
+ios/build/
+ios/Pods/
+
+.git/
+.expo/
+*.apk
+*.aab

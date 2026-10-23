@@ -34,7 +34,11 @@ module.exports = {
     ],
     extra: {
       commitHash: commitAtual(),
+      eas: {
+        projectId: '9174a95f-9cb7-4449-856b-0984305752b9',
+      },
     },
+    owner: 'pietrowilhelm',
     android: {
       package: 'com.petpulsemobile',
       config: {
