@@ -9,7 +9,10 @@
       "android": {
         "buildType": "apk"
       },
-      "ios": {}
+      "ios": {},
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://petpulse-api-j1k8.onrender.com"
+      }
     },
     "production": {}
   }
