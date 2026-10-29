@@ -18,6 +18,7 @@ Pietro Paranhos Wilhelm, RM 561378, 2TDSPG
 - [Funcionalidades](#funcionalidades)
 - [Tecnologias](#tecnologias)
 - [Estrutura do projeto](#estrutura-do-projeto)
+- [IA do projeto](#ia-do-projeto)
 - [Pré-requisitos](#pré-requisitos)
 - [Instalação e execução](#instalação-e-execução)
 - [Integração com a API](#integração-com-a-api-petpulse-api)
@@ -112,6 +113,10 @@ PetPulse-mobile/
 │       └── leafletMapHtml.ts # Gera o HTML do mapa (Leaflet + OpenStreetMap) usado no WebView de Localiza Pet
 └── android/ ios/            # Projetos nativos gerados pelo Expo
 ```
+
+
+# IA do projeto
+> conforme discutido com o professor na aula de 28/10/2026 foi implementado o chat no mobile contudo, não era necessario aparecer no vídeo ou gerar uma nova pk pela adição
 
 ---
 
