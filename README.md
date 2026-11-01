@@ -118,6 +118,8 @@ PetPulse-mobile/
 # IA do projeto
 > conforme discutido com o professor na aula de 28/10/2026 foi implementado o chat no mobile contudo, não era necessario aparecer no vídeo ou gerar uma nova pk pela adição
 
+**Alertas da IA (Sprint 4 — Disruptive Architectures).** Os alertas gerados pelo motor de IA do [PetPulse-AI](https://github.com/Fiap-2tdspg-Challenge/PetPulse-AI) chegam pela mesma rota `GET /smart-alerts`, com origem `MOTOR_IA`. Na Home eles aparecem no sino com o selo **"Análise da IA"**, a mensagem contextual (ex.: *"A frequência cardíaca do Thor está 31% acima do padrão dele em repouso há cerca de 6 h…"*) e a recomendação. Os de risco ALTO disparam a notificação local que já existia.
+
 ---
 
 ## Pré-requisitos
