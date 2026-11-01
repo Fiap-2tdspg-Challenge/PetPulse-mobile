@@ -7,7 +7,8 @@ export type ApiRecordType = 'VACINA' | 'CONSULTA' | 'DOENCA' | 'MEDICAMENTO' | '
 
 export type ApiAlertRiskLevel = 'BAIXO' | 'MEDIO' | 'ALTO';
 
-export type ApiAlertOrigin = 'HISTORICO_CLINICO' | 'DISPOSITIVO_IOT' | 'SISTEMA' | 'USUARIO';
+// MOTOR_IA: alerta contextual gerado pelo PetPulse-AI (baseline individual + Isolation Forest + Gemini).
+export type ApiAlertOrigin = 'HISTORICO_CLINICO' | 'DISPOSITIVO_IOT' | 'SISTEMA' | 'USUARIO' | 'MOTOR_IA';
 
 export type ApiAlertStatus = 'ABERTO' | 'VISUALIZADO' | 'RESOLVIDO';
 

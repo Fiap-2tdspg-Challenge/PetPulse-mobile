@@ -245,6 +245,12 @@ export const Home = () => {
                     >
                       <Ionicons name={cfg.icone as any} size={22} color={cfg.cor} style={{ marginRight: 10 }} />
                       <View style={{ flex: 1 }}>
+                        {alerta.origin === 'MOTOR_IA' && (
+                          <View style={styles.seloIa}>
+                            <Ionicons name="sparkles" size={11} color={tema.roxoMedio} />
+                            <Text style={styles.seloIaTexto}>Análise da IA · {alerta.petName}</Text>
+                          </View>
+                        )}
                         <Text style={[styles.alertaMensagem, { color: cfg.cor }]}>{alerta.message}</Text>
                         <Text style={styles.alertaRecomendacao}>{alerta.recommendation}</Text>
                       </View>
@@ -340,6 +346,18 @@ const criarEstilos = (tema: TemaCores) => StyleSheet.create({
   },
   alertaMensagem:    { fontSize: 13, fontWeight: '700', marginBottom: 2 },
   alertaRecomendacao:{ fontSize: 12, color: tema.texto },
+  seloIa: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    backgroundColor: tema.roxoFundo,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginBottom: 4,
+  },
+  seloIaTexto: { fontSize: 10, fontWeight: '700', color: tema.roxoMedio },
 
   // ações rápidas
   acoesGrid:    { flexDirection: 'row', justifyContent: 'space-between' },
