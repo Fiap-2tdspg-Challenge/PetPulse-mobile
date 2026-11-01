@@ -2,6 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAllSmartAlerts, updateSmartAlert } from '../services/api/smartAlertApi';
 import { SmartAlertResponse } from '../types/types';
 
+// Os alertas da IA nascem no backend a qualquer momento (a cada leitura da coleira),
+// então a Home consulta de novo periodicamente: o sino e a notificação chegam sozinhos.
+const INTERVALO_ALERTAS_MS = 10000;
+
 export function useAlertasPendentes(idsPets: number[]) {
   return useQuery({
     queryKey: ['alertas', idsPets.join(',')],
@@ -11,6 +15,7 @@ export function useAlertasPendentes(idsPets: number[]) {
     },
     enabled: idsPets.length > 0,
     select: (alertas) => alertas.filter((a) => a.status === 'ABERTO'),
+    refetchInterval: INTERVALO_ALERTAS_MS,
   });
 }
 
