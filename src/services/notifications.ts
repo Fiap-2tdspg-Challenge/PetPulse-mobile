@@ -41,8 +41,19 @@ async function marcarComoNotificado(id: number, jaNotificados: Set<number>): Pro
  * da faixa esperada, ou manualmente pelo histórico clínico) — não é um
  * disparo manual só pra demonstração. Cada alerta notifica no máximo uma vez
  * (controlado via AsyncStorage), mesmo que a Home recarregue várias vezes.
+ *
+ * As chamadas entram numa fila: se a Home disparar várias seguidas, cada uma só
+ * começa depois que a anterior gravou os ids no AsyncStorage. Sem isso, todas
+ * liam a lista antes de qualquer gravação e a mesma notificação saía repetida.
  */
-export async function notificarAlertasDeRisco(alertas: SmartAlertResponse[]): Promise<void> {
+let fila: Promise<void> = Promise.resolve();
+
+export function notificarAlertasDeRisco(alertas: SmartAlertResponse[]): Promise<void> {
+  fila = fila.then(() => notificarAgora(alertas)).catch(() => undefined);
+  return fila;
+}
+
+async function notificarAgora(alertas: SmartAlertResponse[]): Promise<void> {
   const altos = alertas.filter((a) => a.riskLevel === "ALTO");
   if (altos.length === 0) return;
 
